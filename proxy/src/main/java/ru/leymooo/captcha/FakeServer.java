@@ -18,7 +18,7 @@ import net.md_5.bungee.protocol.packet.extra.SpawnPosition;
 
 public class FakeServer
 {
-
+    //Random не советую использовать.
     @Setter
     private CaptchaConnector reciever;
     private String captchaAnswer;
