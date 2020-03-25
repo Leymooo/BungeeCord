@@ -6,6 +6,7 @@ import io.netty.handler.codec.MessageToMessageDecoder;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
+import ru.leymooo.botfilter.discard.ChannelShutdownTracker;
 
 @AllArgsConstructor
 public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
@@ -16,6 +17,7 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
     private final boolean server;
     @Setter
     private int protocolVersion;
+    private ChannelShutdownTracker shutdownTracker;
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception
