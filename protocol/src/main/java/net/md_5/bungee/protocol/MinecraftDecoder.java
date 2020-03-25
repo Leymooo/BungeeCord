@@ -3,11 +3,9 @@ package net.md_5.bungee.protocol;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
-import java.net.InetSocketAddress;
 import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Setter;
-import net.md_5.bungee.protocol.packet.Handshake;
 
 @AllArgsConstructor
 public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
@@ -22,30 +20,21 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception
     {
-        Protocol.DirectionData prot = ( server ) ? protocol.TO_SERVER : protocol.TO_CLIENT;
-        ByteBuf slice = in.copy(); // Can't slice this one due to EntityMap :(
+        ByteBuf slice = null;
 
         try
         {
-            int packetId = DefinedPacket.readVarInt( in );
-            DefinedPacket packet = prot.createPacket( packetId, protocolVersion );
+            int originalReaderIndex = in.readerIndex();
+            int originalReadableBytes = in.readableBytes();
+            int packetId = DefinedPacket.readVarInt(in);
+            slice = in.retainedSlice(originalReaderIndex, originalReadableBytes);
+
+            Protocol.DirectionData prot = (server) ? protocol.TO_SERVER : protocol.TO_CLIENT;
+            int protocolVersion = this.protocolVersion;
+            DefinedPacket packet = prot.createPacket(packetId, protocolVersion);
             if ( packet != null )
             {
-                if ( packet instanceof Handshake )
-                {
-                    try
-                    {
-                        packet.read( in, prot.getDirection(), protocolVersion );
-                    } catch ( IndexOutOfBoundsException e )
-                    {
-                        ctx.close();
-                        System.out.println( "[" + ( (InetSocketAddress) ctx.channel().remoteAddress() ).getAddress().getHostAddress() + "] sent wrong Handshake packet. Junk??)" );
-                        return;
-                    }
-                } else
-                {
-                    packet.read( in, prot.getDirection(), protocolVersion );
-                }
+                packet.read( in, prot.getDirection(), protocolVersion );
                 if ( in.isReadable() )
                 {
                     in.skipBytes( in.readableBytes() ); //BotFilter
@@ -66,5 +55,11 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
                 slice.release();
             }
         }
+    }
+
+    @Override
+    public boolean acceptInboundMessage(Object msg) throws Exception
+    {
+        return msg instanceof ByteBuf;
     }
 }
