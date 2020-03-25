@@ -64,7 +64,9 @@ public class PipelineUtils
         {
             SocketAddress remoteAddress = ( ch.remoteAddress() == null ) ? ch.parent().localAddress() : ch.remoteAddress();
 
-            if ( BungeeCord.getInstance().getConnectionThrottle() != null && BungeeCord.getInstance().getConnectionThrottle().throttle( remoteAddress ) )
+            val instance = BungeeCord.getInstance();
+            val throttle = instance.getConnectionThrottle();
+            if ( throttle != null && throttle.throttle( remoteAddress ) )
             {
                 ch.close();
                 return;
@@ -72,7 +74,7 @@ public class PipelineUtils
 
             ListenerInfo listener = ch.attr( LISTENER ).get();
 
-            if ( BungeeCord.getInstance().getPluginManager().callEvent( new ClientConnectEvent( remoteAddress, listener ) ).isCancelled() )
+            if ( instance.getPluginManager().callEvent( new ClientConnectEvent( remoteAddress, listener ) ).isCancelled() )
             {
                 ch.close();
                 return;
@@ -84,7 +86,7 @@ public class PipelineUtils
             ch.pipeline().addAfter( FRAME_DECODER, PACKET_DECODER, new MinecraftDecoder( Protocol.HANDSHAKE, true, ProxyServer.getInstance().getProtocolVersion(), tracker ) );
             ch.pipeline().addAfter( FRAME_PREPENDER, PACKET_ENCODER, new MinecraftEncoder( Protocol.HANDSHAKE, true, ProxyServer.getInstance().getProtocolVersion() ) );
             ch.pipeline().addBefore( FRAME_PREPENDER, LEGACY_KICKER, legacyKicker );
-            ch.pipeline().get( HandlerBoss.class ).setHandler( new InitialHandler( BungeeCord.getInstance(), listener ) );
+            ch.pipeline().get( HandlerBoss.class ).setHandler( new InitialHandler( BungeeCord.getInstance(), listener, tracker ) );
 
             if ( listener.isProxyProtocol() )
             {

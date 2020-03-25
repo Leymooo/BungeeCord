@@ -16,7 +16,15 @@ public final class ChannelShutdownTracker {
 		val ch = this.ch;
 		ch.pipeline().addFirst(ChannelDiscardHandler.DISCARD_FIRST, ChannelDiscardHandler.INSTANCE)
 				.addAfter(ctx.name(), ChannelDiscardHandler.DISCARD, ChannelDiscardHandler.INSTANCE);
-		return ctx.close();
+		return ch.close();
+	}
+
+	public ChannelFuture shutdown(String ctx) {
+		this.shutdown = true;
+		val ch = this.ch;
+		ch.pipeline().addFirst(ChannelDiscardHandler.DISCARD_FIRST, ChannelDiscardHandler.INSTANCE)
+				.addAfter(ctx, ChannelDiscardHandler.DISCARD, ChannelDiscardHandler.INSTANCE);
+		return ch.close();
 	}
 
 	public boolean isShuttedDown() {
