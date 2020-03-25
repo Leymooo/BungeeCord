@@ -20,29 +20,29 @@ public class Varint21FrameDecoder extends ByteToMessageDecoder
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception
     {
         val tracker = this.shutdownTracker;
-        if (tracker.isShuttedDown())
+        if ( tracker.isShuttedDown() )
         {
             return;
         }
         int origReaderIndex = in.readerIndex();
 
         int i = 3;
-        while (i-- > 0)
+        while ( i-- > 0 )
         {
-            if (!in.isReadable())
+            if ( !in.isReadable() )
             {
                 in.readerIndex( origReaderIndex );
                 return;
             }
 
             byte read = in.readByte();
-            if (read >= 0)
+            if ( read >= 0 )
             {
                 // Make sure reader index of length buffer is returned to the beginning
                 in.readerIndex( origReaderIndex );
                 int packetLength = DefinedPacket.readVarInt( in );
 
-                if (packetLength <= 0)
+                if ( packetLength <= 0 )
                 {
                     super.setSingleDecode( true );
                     tracker.shutdown( ctx ).addListener( ( ChannelFutureListener ) future ->
@@ -52,7 +52,7 @@ public class Varint21FrameDecoder extends ByteToMessageDecoder
                     return;
                 }
 
-                if (in.readableBytes() < packetLength)
+                if ( in.readableBytes() < packetLength )
                 {
                     in.readerIndex( origReaderIndex );
                     return;

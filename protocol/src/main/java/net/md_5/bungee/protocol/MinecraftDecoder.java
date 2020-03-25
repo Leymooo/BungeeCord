@@ -29,11 +29,11 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
             int originalReaderIndex = in.readerIndex();
             int originalReadableBytes = in.readableBytes();
             int packetId = DefinedPacket.readVarInt(in);
-            slice = in.retainedSlice(originalReaderIndex, originalReadableBytes);
+            slice = in.retainedSlice( originalReaderIndex, originalReadableBytes );
 
-            Protocol.DirectionData prot = (server) ? protocol.TO_SERVER : protocol.TO_CLIENT;
+            Protocol.DirectionData prot = ( server ) ? protocol.TO_SERVER : protocol.TO_CLIENT;
             int protocolVersion = this.protocolVersion;
-            DefinedPacket packet = prot.createPacket(packetId, protocolVersion);
+            DefinedPacket packet = prot.createPacket( packetId, protocolVersion );
             if ( packet != null )
             {
                 packet.read( in, prot.getDirection(), protocolVersion );
