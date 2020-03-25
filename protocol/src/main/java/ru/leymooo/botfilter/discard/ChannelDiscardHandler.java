@@ -19,7 +19,7 @@ final class ChannelDiscardHandler extends ChannelInboundHandlerAdapter
 	@Override
 	public void channelRead(ChannelHandlerContext ctx, Object msg)
 	{
-		if ( msg instanceof ByteBuf)
+		if ( msg instanceof ByteBuf )
 		{
 			( (ByteBuf) msg ).release();
 			val ch = ctx.channel();

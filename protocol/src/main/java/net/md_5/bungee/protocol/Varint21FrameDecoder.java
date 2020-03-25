@@ -4,12 +4,11 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.val;
 import ru.leymooo.botfilter.discard.ChannelShutdownTracker;
 import ru.leymooo.botfilter.discard.ErrorStream;
-
-import java.util.List;
 
 @RequiredArgsConstructor
 public class Varint21FrameDecoder extends ByteToMessageDecoder
