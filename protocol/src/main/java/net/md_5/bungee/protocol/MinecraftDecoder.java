@@ -43,7 +43,7 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
             {
                 tracker.shutdown( ctx ).addListener( ( ChannelFutureListener ) future ->
                 {
-                    ErrorStream.error("[" + ctx.channel().remoteAddress() + "] <-> MinecraftDecoder received invalid packet id " + packetId + ", disconnected");
+                    ErrorStream.error( "[" + ctx.channel().remoteAddress() + "] <-> MinecraftDecoder received invalid packet id " + packetId + ", disconnected" );
                 } );
                 return;
             }
@@ -62,7 +62,7 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
                     {
                         tracker.shutdown( ctx ).addListener( (ChannelFutureListener) future ->
                         {
-                            ErrorStream.error("[" + ctx.channel().remoteAddress() + "] Longer than expected: Packet " + packetId + " Protocol " + protocol + " Direction " + prot.getDirection());
+                            ErrorStream.error( "[" + ctx.channel().remoteAddress() + "] Longer than expected: Packet " + packetId + " Protocol " + protocol + " Direction " + prot.getDirection() );
                         } );
                         return;
                     }

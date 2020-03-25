@@ -30,7 +30,7 @@ public final class NativeCode<T>
             {
                 try
                 {
-                    val constructor = this.constructor = javaImpl.getConstructor();
+                    Constructor<? extends T> constructor = this.constructor = javaImpl.getConstructor();
                     constructor.setAccessible( true );
                 } catch ( NoSuchMethodException ex )
                 {
@@ -50,7 +50,7 @@ public final class NativeCode<T>
             {
                 try
                 {
-                    val constructor = this.constructor = nativeImpl.getConstructor();
+                    Constructor<? extends T> constructor = this.constructor = nativeImpl.getConstructor();
                     constructor.setAccessible( true );
                 } catch ( NoSuchMethodException ex )
                 {

@@ -65,7 +65,7 @@ public class Varint21FrameDecoder extends ByteToMessageDecoder
         super.setSingleDecode( true );
         tracker.shutdown( ctx ).addListener( ( ChannelFutureListener ) future ->
         {
-            ErrorStream.error("[" + future.channel().remoteAddress() + "] <-> Varint21FrameDecoder packet length field too long, disconnected");
+            ErrorStream.error( "[" + future.channel().remoteAddress() + "] <-> Varint21FrameDecoder packet length field too long, disconnected" );
         } );
         //throw new CorruptedFrameException( "length wider than 21-bit" );
     }
