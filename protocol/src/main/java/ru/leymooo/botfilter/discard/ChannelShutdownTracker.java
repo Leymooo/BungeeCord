@@ -18,6 +18,7 @@ public final class ChannelShutdownTracker
         val ch = this.ch;
         ch.pipeline().addFirst( ChannelDiscardHandler.DISCARD_FIRST, ChannelDiscardHandler.INSTANCE )
             .addAfter( ctx.name(), ChannelDiscardHandler.DISCARD, ChannelDiscardHandler.INSTANCE );
+        ch.config().setAutoRead( false );
         return ch.close();
     }
 

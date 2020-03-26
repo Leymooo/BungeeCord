@@ -99,13 +99,16 @@ public class ChannelWrapper
         {
             closed = closing = true;
 
-            if ( packet != null && ch.isActive() )
+            if ( ch.isActive() )
             {
-                ch.writeAndFlush( packet ).addListeners( ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE, ChannelFutureListener.CLOSE );
-            } else
-            {
-                ch.flush();
-                ch.close();
+                ch.config().setAutoRead( false );
+                if ( packet != null )
+                {
+                    ch.writeAndFlush( packet ).addListeners( ChannelFutureListener.FIRE_EXCEPTION_ON_FAILURE, ChannelFutureListener.CLOSE );
+                } else
+                {
+                    ch.flush().close();
+                }
             }
         }
     }
@@ -116,6 +119,7 @@ public class ChannelWrapper
         {
             closing = true;
 
+            ch.config().setAutoRead( false );
             // Minecraft client can take some time to switch protocols.
             // Sending the wrong disconnect packet whilst a protocol switch is in progress will crash it.
             // Delay 250ms to ensure that the protocol switch (if any) has definitely taken place.
