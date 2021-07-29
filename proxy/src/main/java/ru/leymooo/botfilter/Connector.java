@@ -36,8 +36,7 @@ import ru.leymooo.botfilter.utils.ManyChecksUtils;
     {
     "name"
     })
-public class Connector extends MoveHandler
-{
+public class Connector extends MoveHandler {
 
     private static final Logger LOGGER = BungeeCord.getInstance().getLogger();
     private static final int MAX_PLUGIN_MESSAGES_BYTES = 160000; //160 KB
@@ -66,8 +65,7 @@ public class Connector extends MoveHandler
     private boolean markDisconnected = false;
     private int pluginMessagesBytes = 0;
 
-    public Connector(UserConnection userConnection, BotFilter botFilter)
-    {
+    public Connector(UserConnection userConnection, BotFilter botFilter) {
         this.botFilter = botFilter;
         this.state = this.botFilter.getCurrentCheckState();
         this.name = userConnection.getName();
@@ -80,8 +78,7 @@ public class Connector extends MoveHandler
     }
 
 
-    public void spawn()
-    {
+    public void spawn() {
         this.botFilter.incrementBotCounter();
         if ( !Settings.IMP.PROTECTION.ALWAYS_CHECK )
         {
@@ -103,8 +100,7 @@ public class Connector extends MoveHandler
     }
 
     @Override
-    public void exception(Throwable t) throws Exception
-    {
+    public void exception(Throwable t) throws Exception {
         markDisconnected = true;
         if ( state == CheckState.FAILED )
         {
@@ -117,8 +113,7 @@ public class Connector extends MoveHandler
     }
 
     @Override
-    public void handle(PacketWrapper packet) throws Exception
-    {
+    public void handle(PacketWrapper packet) throws Exception {
         //There are no unknown packets which player will send and will be longer than 2048 bytes during check
         if ( packet.packet == null && packet.buf.readableBytes() > 2048 )
         {
@@ -127,30 +122,23 @@ public class Connector extends MoveHandler
     }
 
     @Override
-    public void disconnected(ChannelWrapper channel) throws Exception
-    {
-        switch ( state )
-        {
-            case ONLY_CAPTCHA:
-            case ONLY_POSITION:
-            case CAPTCHA_POSITION:
-                String info = "(BF) [" + name + "|" + ip + "] left from server during check";
+    public void disconnected(ChannelWrapper channel) throws Exception {
+        if (state == ONLY_CAPTCHA || state == ONLY_POSITION || state == CAPTCHA_POSITION) {
+                String info = "[BotFilter]  Игрок " + name + "    [/" + ip + "] вышел с сервера, во время проверки";
                 LOGGER.log( Level.INFO, info );
                 FailedUtils.addIpToQueue( ip, KickType.LEAVED );
                 break;
-        }
+        } 
         botFilter.removeConnection( null, this );
         disconnected();
     }
 
     @Override
-    public void handlerChanged()
-    {
+    public void handlerChanged(){
         disconnected();
     }
 
-    private void disconnected()
-    {
+    private void disconnected() {
         channel = null;
         userConnection = null;
     }
@@ -195,8 +183,8 @@ public class Connector extends MoveHandler
         userConnection.setNeedLogin( false );
         userConnection.getPendingConnection().finishLogin( userConnection, true );
         markDisconnected = true;
-        LOGGER.log( Level.INFO, "[BotFilter] Игрок (" + name + "|" + ip + ") успешно прошёл проверку" );
-    }
+        LOGGER.log( Level.INFO, "[BotFilter] Игрок " + name + " [/" + ip + "] успешно прошёл проверку");
+        }
 
     @Override
     public void onMove()
