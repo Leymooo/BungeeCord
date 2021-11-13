@@ -778,6 +778,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         }
     }
 
+//BotFilter start
     public static void checkState(boolean expression, String errorMessage)
     {
         if ( !expression )
@@ -785,4 +786,5 @@ public class InitialHandler extends PacketHandler implements PendingConnection
             throw new FastException( errorMessage );
         }
     }
+    //BotFilter end
 }
