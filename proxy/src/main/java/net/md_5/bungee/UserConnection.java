@@ -16,6 +16,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
@@ -62,6 +63,7 @@ import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.protocol.packet.SetCompression;
 import net.md_5.bungee.tab.ServerUnique;
 import net.md_5.bungee.tab.TabList;
+import net.md_5.bungee.util.BoundedArrayList;
 import net.md_5.bungee.util.CaseInsensitiveSet;
 import net.md_5.bungee.util.ChatComponentTransformer;
 
@@ -69,10 +71,21 @@ import net.md_5.bungee.util.ChatComponentTransformer;
 public final class UserConnection implements ProxiedPlayer
 {
 
+    @Getter
+    @Setter
+    private boolean needLogin = true; //BotFilter
+    @Getter
+    @Setter
+    private boolean callSettingsEvent = false; //BotFilter
+    @Getter
+    @Setter
+    private List<PluginMessage> delayedPluginMessages = new BoundedArrayList<>( 128 + 56 ); //BotFilter
+
     /*========================================================================*/
     @NonNull
     private final ProxyServer bungee;
     @NonNull
+    @Getter //BotFilter
     private final ChannelWrapper ch;
     @Getter
     @NonNull

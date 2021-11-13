@@ -12,12 +12,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import ru.leymooo.botfilter.utils.FastBadPacketException;
+import ru.leymooo.botfilter.utils.FastException;
+import ru.leymooo.botfilter.utils.FastOverflowPacketException;
 import se.llbit.nbt.NamedTag;
 import se.llbit.nbt.Tag;
 
 @RequiredArgsConstructor
 public abstract class DefinedPacket
 {
+
+    private static final FastException VARINT_TOO_BIG = new FastException( "varint too big" ); //BotFilter
+    private static final FastException ILLEGAL_BUF = new FastException( "Buffer is no longer readable" ); //BotFilter
 
     public static void writeString(String s, ByteBuf buf)
     {
@@ -41,7 +47,7 @@ public abstract class DefinedPacket
         int len = readVarInt( buf );
         if ( len > maxLen * 4 )
         {
-            throw new OverflowPacketException( "Cannot receive string longer than " + maxLen * 4 + " (got " + len + " bytes)" );
+            throw new FastOverflowPacketException( "Cannot receive string longer than " + maxLen * 4 + " (got " + len + " bytes)" );
         }
 
         byte[] b = new byte[ len ];
@@ -50,7 +56,7 @@ public abstract class DefinedPacket
         String s = new String( b, Charsets.UTF_8 );
         if ( s.length() > maxLen )
         {
-            throw new OverflowPacketException( "Cannot receive string longer than " + maxLen + " (got " + s.length() + " characters)" );
+            throw new FastOverflowPacketException( "Cannot receive string longer than " + maxLen + " (got " + s.length() + " characters)" );
         }
 
         return s;
@@ -84,7 +90,7 @@ public abstract class DefinedPacket
         int len = readVarInt( buf );
         if ( len > limit )
         {
-            throw new OverflowPacketException( "Cannot receive byte array longer than " + limit + " (got " + len + " bytes)" );
+            throw new FastOverflowPacketException( "Cannot receive byte array longer than " + limit + " (got " + len + " bytes)" );
         }
         byte[] ret = new byte[ len ];
         buf.readBytes( ret );
@@ -134,15 +140,23 @@ public abstract class DefinedPacket
         int out = 0;
         int bytes = 0;
         byte in;
+        // int readable = input.readableBytes(); //BotFilter
         while ( true )
         {
+            // BotFilter start
+            // if ( readable-- == 0 )
+            // {
+            //      throw ILLEGAL_BUF;
+            //   }
+            //BotFiter end
             in = input.readByte();
 
             out |= ( in & 0x7F ) << ( bytes++ * 7 );
 
             if ( bytes > maxBytes )
             {
-                throw new RuntimeException( "VarInt too big" );
+                input.clear();
+                throw VARINT_TOO_BIG; //BotFilter
             }
 
             if ( ( in & 0x80 ) != 0x80 )
@@ -231,6 +245,26 @@ public abstract class DefinedPacket
             throw new RuntimeException( "Exception writing tag", ex );
         }
     }
+
+    //BotFilter start - see https://github.com/PaperMC/Waterfall/blob/master/BungeeCord-Patches/0060-Additional-DoS-mitigations.patch
+    public static void doLengthSanityChecks(ByteBuf buf, DefinedPacket packet,
+                                      ProtocolConstants.Direction direction, int protocolVersion, int expectedMinLen, int expectedMaxLen)
+    {
+        int readable = buf.readableBytes();
+        if ( readable > expectedMaxLen )
+        {
+            throw new FastBadPacketException( "Packet " + packet.getClass()
+                                    + " Protocol " + protocolVersion + " was too big (expected "
+                                    + expectedMaxLen + " bytes, got " + readable + " bytes)" );
+        }
+        if ( readable < expectedMinLen )
+        {
+            throw new FastBadPacketException( "Packet " + packet.getClass()
+                                    + " Protocol " + protocolVersion + " was too small (expected "
+                                    + expectedMinLen + " bytes, got " + readable + " bytes)" );
+        }
+    }
+    //BotFilter end
 
     public void read(ByteBuf buf)
     {

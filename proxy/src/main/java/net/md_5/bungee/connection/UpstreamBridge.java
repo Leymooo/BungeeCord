@@ -4,7 +4,6 @@ import com.google.common.base.Preconditions;
 import com.mojang.brigadier.context.StringRange;
 import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
-import io.netty.channel.Channel;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -37,8 +36,11 @@ import net.md_5.bungee.util.AllowedCharacters;
 public class UpstreamBridge extends PacketHandler
 {
 
+
     private final ProxyServer bungee;
     private final UserConnection con;
+
+    private long lastTabCompletion = -1; //BotFilter
 
     public UpstreamBridge(ProxyServer bungee, UserConnection con)
     {
@@ -48,7 +50,43 @@ public class UpstreamBridge extends PacketHandler
         BungeeCord.getInstance().addConnection( con );
         con.getTabListHandler().onConnect();
         con.unsafe().sendPacket( BungeeCord.getInstance().registerChannels( con.getPendingConnection().getVersion() ) );
+
+        //BotFilter start
+        if ( con.isCallSettingsEvent() )
+        {
+            SettingsChangedEvent settingsEvent = new SettingsChangedEvent( con );
+            bungee.getPluginManager().callEvent( settingsEvent );
+            con.setCallSettingsEvent( false );
+        }
+        if ( !con.getDelayedPluginMessages().isEmpty() )
+        {
+            con.setDelayedPluginMessages( clearPluginMessages( con.getDelayedPluginMessages() ) );
+        }
+        //BotFilter end
     }
+
+    //BotFilter start
+    private List<PluginMessage> clearPluginMessages(List<PluginMessage> delayedPluginMessages)
+    {
+        List<PluginMessage> cleared = new ArrayList<>();
+        for ( PluginMessage message : delayedPluginMessages )
+        {
+            try
+            {
+                this.handle( message );
+                cleared.add( message );
+            } catch ( Throwable t )
+            {
+                if ( !( t instanceof CancelSendSignal ) )
+                {
+                    throw new RuntimeException( t.getMessage(), t );
+                }
+            }
+        }
+        delayedPluginMessages.clear();
+        return cleared;
+    }
+    //BotFilter end
 
     @Override
     public void exception(Throwable t) throws Exception
@@ -94,14 +132,7 @@ public class UpstreamBridge extends PacketHandler
     {
         if ( con.getServer() != null )
         {
-            Channel server = con.getServer().getCh().getHandle();
-            if ( channel.getHandle().isWritable() )
-            {
-                server.config().setAutoRead( true );
-            } else
-            {
-                server.config().setAutoRead( false );
-            }
+            con.getServer().getCh().getHandle().config().setAutoRead( channel.getHandle().isWritable() );
         }
     }
 
@@ -128,8 +159,14 @@ public class UpstreamBridge extends PacketHandler
     @Override
     public void handle(KeepAlive alive) throws Exception
     {
-        KeepAliveData keepAliveData = con.getServer().getKeepAlives().peek();
+        //BotFilter start - fix possibility race condition caused by botfilter keep alive packet
+        if ( con.getServer() == null )
+        {
+            throw CancelSendSignal.INSTANCE;
+        }
+        //BotFilter end
 
+        KeepAliveData keepAliveData = con.getServer().getKeepAlives().peek();
         if ( keepAliveData != null && alive.getRandomId() == keepAliveData.getId() )
         {
             Preconditions.checkState( keepAliveData == con.getServer().getKeepAlives().poll(), "keepalive queue mismatch" );
@@ -170,6 +207,15 @@ public class UpstreamBridge extends PacketHandler
     @Override
     public void handle(TabCompleteRequest tabComplete) throws Exception
     {
+        //BotFilter start
+        long now = System.currentTimeMillis();
+        if ( con.getPendingConnection().getVersion() <= ProtocolConstants.MINECRAFT_1_12_2 && lastTabCompletion > 0 && ( now - lastTabCompletion ) <= 500 )
+        {
+            throw CancelSendSignal.INSTANCE;
+        }
+        lastTabCompletion = now;
+        //BotFilter end
+
         List<String> suggestions = new ArrayList<>();
         boolean isRegisteredCommand = false;
 

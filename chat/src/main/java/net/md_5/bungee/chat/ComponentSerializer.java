@@ -10,6 +10,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 import java.lang.reflect.Type;
 import java.util.Set;
+import lombok.Getter;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ItemTag;
 import net.md_5.bungee.api.chat.KeybindComponent;
@@ -27,6 +28,7 @@ import net.md_5.bungee.api.chat.hover.content.TextSerializer;
 public class ComponentSerializer implements JsonDeserializer<BaseComponent>
 {
 
+    @Getter //BotFilter
     private static final JsonParser JSON_PARSER = new JsonParser();
     private static final Gson gson = new GsonBuilder().
             registerTypeAdapter( BaseComponent.class, new ComponentSerializer() ).
@@ -40,6 +42,7 @@ public class ComponentSerializer implements JsonDeserializer<BaseComponent>
             registerTypeAdapter( Item.class, new ItemSerializer() ).
             registerTypeAdapter( ItemTag.class, new ItemTag.Serializer() ).
             create();
+
 
     public static final ThreadLocal<Set<BaseComponent>> serializedComponents = new ThreadLocal<Set<BaseComponent>>();
 

@@ -27,12 +27,17 @@ import net.md_5.bungee.util.QuietException;
 public class HandlerBoss extends ChannelInboundHandlerAdapter
 {
 
+    private static final boolean printAllStacktraces = Boolean.getBoolean( "botfilter.printallerrors" );
+
     private ChannelWrapper channel;
     private PacketHandler handler;
-
     public void setHandler(PacketHandler handler)
     {
         Preconditions.checkArgument( handler != null, "handler" );
+        if ( this.handler != null )
+        { //BotFilter start
+            this.handler.handlerChanged();
+        } // END
         this.handler = handler;
     }
 
@@ -46,7 +51,7 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
 
             if ( !( handler instanceof InitialHandler || handler instanceof PingHandler ) )
             {
-                ProxyServer.getInstance().getLogger().log( Level.INFO, "{0} has connected", handler );
+                ProxyServer.getInstance().getLogger().log( Level.INFO, "{0} has connected", handler.toString() ); // BotFilter, use toString() instead of object
             }
         }
     }
@@ -61,7 +66,7 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
 
             if ( !( handler instanceof InitialHandler || handler instanceof PingHandler ) )
             {
-                ProxyServer.getInstance().getLogger().log( Level.INFO, "{0} has disconnected", handler );
+                ProxyServer.getInstance().getLogger().log( Level.INFO, "{0} has disconnected", handler.toString() ); // BotFilter, use toString() instead of object
             }
         }
     }
@@ -107,19 +112,22 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
             boolean sendPacket = handler.shouldHandle( packet );
             try
             {
-                if ( sendPacket && packet.packet != null )
+                if ( !channel.isClosed() ) //BotFilter Do not handle packets if closed
                 {
-                    try
+                    if ( sendPacket && packet.packet != null )
                     {
-                        packet.packet.handle( handler );
-                    } catch ( CancelSendSignal ex )
-                    {
-                        sendPacket = false;
+                        try
+                        {
+                            packet.packet.handle( handler );
+                        } catch ( CancelSendSignal ex )
+                        {
+                            sendPacket = false;
+                        }
                     }
-                }
-                if ( sendPacket )
-                {
-                    handler.handle( packet );
+                    if ( sendPacket )
+                    {
+                        handler.handle( packet );
+                    }
                 }
             } finally
             {
@@ -133,49 +141,53 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
     {
         if ( ctx.channel().isActive() )
         {
+            if ( printAllStacktraces )
+            {
+                ProxyServer.getInstance().getLogger().log( Level.WARNING, "Exception in handler " + handler.toString(), cause );
+            }
             boolean logExceptions = !( handler instanceof PingHandler );
 
             if ( logExceptions )
             {
                 if ( cause instanceof ReadTimeoutException )
                 {
-                    ProxyServer.getInstance().getLogger().log( Level.WARNING, "{0} - read timed out", handler );
+                    ProxyServer.getInstance().getLogger().log( Level.WARNING, "{0} - read timed out", handler.toString() ); // BotFilter, use toString() instead of object
                 } else if ( cause instanceof DecoderException )
                 {
                     if ( cause instanceof CorruptedFrameException )
                     {
                         ProxyServer.getInstance().getLogger().log( Level.WARNING, "{0} - corrupted frame: {1}", new Object[]
                         {
-                            handler, cause.getMessage()
+                            handler.toString(), cause.getMessage() // BotFilter, use toString() instead of object
                         } );
                     } else if ( cause.getCause() instanceof BadPacketException )
                     {
                         ProxyServer.getInstance().getLogger().log( Level.WARNING, "{0} - bad packet ID, are mods in use!? {1}", new Object[]
                         {
-                            handler, cause.getCause().getMessage()
+                            handler.toString(), cause.getCause().getMessage() // BotFilter, use toString() instead of object
                         } );
                     } else if ( cause.getCause() instanceof OverflowPacketException )
                     {
                         ProxyServer.getInstance().getLogger().log( Level.WARNING, "{0} - overflow in packet detected! {1}", new Object[]
                         {
-                            handler, cause.getCause().getMessage()
+                            handler.toString(), cause.getCause().getMessage() // BotFilter, use toString() instead of object
                         } );
                     }
                 } else if ( cause instanceof IOException || ( cause instanceof IllegalStateException && handler instanceof InitialHandler ) )
                 {
                     ProxyServer.getInstance().getLogger().log( Level.WARNING, "{0} - {1}: {2}", new Object[]
                     {
-                        handler, cause.getClass().getSimpleName(), cause.getMessage()
+                        handler.toString(), cause.getClass().getSimpleName(), cause.getMessage() // BotFilter, use toString() instead of object
                     } );
                 } else if ( cause instanceof QuietException )
                 {
                     ProxyServer.getInstance().getLogger().log( Level.SEVERE, "{0} - encountered exception: {1}", new Object[]
                     {
-                        handler, cause
+                        handler.toString(), cause // BotFilter, use toString() instead of object
                     } );
                 } else
                 {
-                    ProxyServer.getInstance().getLogger().log( Level.SEVERE, handler + " - encountered exception", cause );
+                    ProxyServer.getInstance().getLogger().log( Level.SEVERE, handler.toString() + " - encountered exception", cause );  // BotFilter, use toString() instead of object
                 }
             }
 
@@ -190,6 +202,7 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
                 }
             }
 
+            channel.markClosed();
             ctx.close();
         }
     }

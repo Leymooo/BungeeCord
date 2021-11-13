@@ -65,7 +65,7 @@ public final class NativeCode<T>
                     // Can't write to tmp?
                 } catch ( UnsatisfiedLinkError ex )
                 {
-                    System.out.println( "Could not load native library: " + ex.getMessage() );
+                    System.err.println( "Could not load native library: " + ex.getMessage() );
                 }
             }
         }

@@ -1,78 +1,112 @@
 package net.md_5.bungee.protocol;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
-import io.netty.handler.codec.CorruptedFrameException;
 import java.util.List;
+import net.md_5.bungee.protocol.packet.Handshake;
+import net.md_5.bungee.protocol.packet.LoginRequest;
+import ru.leymooo.botfilter.utils.FastCorruptedFrameException;
+import ru.leymooo.botfilter.utils.FastOverflowPacketException;
 
 public class Varint21FrameDecoder extends ByteToMessageDecoder
 {
+    //BotFilter start
+    private boolean fromBackend;
+    //see https://github.com/PaperMC/Waterfall/pull/609/
+    private int packetCount;
 
-    private static boolean DIRECT_WARNING;
+    public void setFromBackend(boolean fromBackend)
+    {
+        this.fromBackend = fromBackend;
+    }
 
+    //BotFilter end
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception
     {
-        // If we decode an invalid packet and an exception is thrown (thus triggering a close of the connection),
-        // the Netty ByteToMessageDecoder will continue to frame more packets and potentially call fireChannelRead()
-        // on them, likely with more invalid packets. Therefore, check if the connection is no longer active and if so
-        // sliently discard the packet.
-        if ( !ctx.channel().isActive() )
+        //BotFilter start - rewrite Varint21Decoder
+        if ( !ctx.channel().isActive() ) //BotFilter - added this if statament
         {
             in.skipBytes( in.readableBytes() );
             return;
         }
 
-        in.markReaderIndex();
+        int origReaderIndex = in.readerIndex();
 
-        final byte[] buf = new byte[ 3 ];
-        for ( int i = 0; i < buf.length; i++ )
+        int i = 3;
+        while ( i-- > 0 )
         {
             if ( !in.isReadable() )
             {
-                in.resetReaderIndex();
+                in.readerIndex( origReaderIndex );
                 return;
             }
 
-            buf[i] = in.readByte();
-            if ( buf[i] >= 0 )
+            byte read = in.readByte();
+            if ( read >= 0 )
             {
-                int length = DefinedPacket.readVarInt( Unpooled.wrappedBuffer( buf ) );
-                if ( length == 0 )
+                // Make sure reader index of length buffer is returned to the beginning
+                in.readerIndex( origReaderIndex );
+                int packetLength = DefinedPacket.readVarInt( in );
+
+                if ( packetLength <= 0 && !fromBackend ) // BotFilter dont throw exception for empties packets from backend
                 {
-                    throw new CorruptedFrameException( "Empty Packet!" );
+                    super.setSingleDecode( true );  // BotFilter
+                    throw new FastCorruptedFrameException( "Empty Packet!" );
                 }
 
-                if ( in.readableBytes() < length )
+                if ( !fromBackend && packetCount < 4 )
                 {
-                    in.resetReaderIndex();
-                    return;
-                } else
-                {
-                    if ( in.hasMemoryAddress() )
-                    {
-                        out.add( in.slice( in.readerIndex(), length ).retain() );
-                        in.skipBytes( length );
-                    } else
-                    {
-                        if ( !DIRECT_WARNING )
-                        {
-                            DIRECT_WARNING = true;
-                            System.out.println( "Netty is not using direct IO buffers." );
-                        }
+                    checkPacketLength( packetLength );
+                }
 
-                        // See https://github.com/SpigotMC/BungeeCord/issues/1717
-                        ByteBuf dst = ctx.alloc().directBuffer( length );
-                        in.readBytes( dst );
-                        out.add( dst );
-                    }
+                if ( in.readableBytes() < packetLength )
+                {
+                    in.readerIndex( origReaderIndex );
                     return;
                 }
+                out.add( in.readRetainedSlice( packetLength ) );
+                return;
             }
         }
 
-        throw new CorruptedFrameException( "length wider than 21-bit" );
+        super.setSingleDecode( true ); // BotFilter
+        throw new FastCorruptedFrameException( "length wider than 21-bit" ); // BotFilter
     }
+
+    private void checkPacketLength(int length)
+    {
+        int maxLength = 2097151; // max length of 21-bit varint
+
+        switch ( packetCount )
+        {
+            case 0:
+                maxLength = Handshake.EXPECTED_MAX_LENGTH + 2;
+                break;
+            case 1:
+                // in case of server list ping, the the packets we get after handshake are always smaller
+                // than any of these, so no need for special casing
+                maxLength = LoginRequest.EXPECTED_MAX_LENGTH + 1;
+                break;
+            case 2:
+            case 3:
+                //For 2:
+                // if offline mode we get minecraft:brand (bigger), otherwise we get EncryptionResponse
+                // so we check for the bigger packet, we are still far below critical maximum sizes
+                // minecraft:brand (16 bytes) followed by a 400 char long string should never be reached
+                //For 3:
+                // if offline mode we get either teleport confirm or player pos&look
+                // otherwise we get minecraft:brand (bigger max size)
+                maxLength = 16 + ( 400 * 4 + 3 );
+                break;
+        }
+        if ( length > maxLength )
+        {
+            throw new FastOverflowPacketException( "Packet #" + packetCount + " could not be framed because was too large"
+                + " (expected " + maxLength + " bytes, got " + length + " bytes)" );
+        }
+        packetCount++;
+    }
+    //BotFilter end
 }

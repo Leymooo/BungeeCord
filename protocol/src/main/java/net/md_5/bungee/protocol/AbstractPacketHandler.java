@@ -38,6 +38,10 @@ import net.md_5.bungee.protocol.packet.Team;
 import net.md_5.bungee.protocol.packet.Title;
 import net.md_5.bungee.protocol.packet.TitleTimes;
 import net.md_5.bungee.protocol.packet.ViewDistance;
+import ru.leymooo.botfilter.packets.Player;
+import ru.leymooo.botfilter.packets.PlayerPosition;
+import ru.leymooo.botfilter.packets.PlayerPositionAndLook;
+import ru.leymooo.botfilter.packets.TeleportConfirm;
 
 public abstract class AbstractPacketHandler
 {
@@ -45,6 +49,24 @@ public abstract class AbstractPacketHandler
     public void handle(LegacyPing ping) throws Exception
     {
     }
+
+    //BotFilter statrt
+    public void handle(Player player) throws Exception
+    {
+    }
+
+    public void handle(PlayerPosition pos) throws Exception
+    {
+    }
+
+    public void handle(TeleportConfirm confirm) throws Exception
+    {
+    }
+
+    public void handle(PlayerPositionAndLook posRot) throws Exception
+    {
+    }
+    //BotFilter end
 
     public void handle(TabCompleteResponse tabResponse) throws Exception
     {

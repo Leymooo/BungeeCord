@@ -37,6 +37,7 @@ import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.Varint21FrameDecoder;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EntityStatus;
 import net.md_5.bungee.protocol.packet.GameState;
@@ -98,6 +99,8 @@ public class ServerConnector extends PacketHandler
     public void connected(ChannelWrapper channel) throws Exception
     {
         this.ch = channel;
+
+        channel.getHandle().pipeline().get( Varint21FrameDecoder.class ).setFromBackend( true );
 
         this.handshakeHandler = new ForgeServerHandler( user, ch, target );
         Handshake originalHandshake = user.getPendingConnection().getHandshake();
@@ -217,7 +220,7 @@ public class ServerConnector extends PacketHandler
             user.getForgeClientHandler().setHandshakeComplete();
         }
 
-        if ( user.getServer() == null || !( login.getDimension() instanceof Integer ) )
+        if ( user.isNeedLogin() || !( login.getDimension() instanceof Integer ) ) //BotFilter
         {
             // Once again, first connection
             user.setClientEntityId( login.getEntityId() );
@@ -229,9 +232,13 @@ public class ServerConnector extends PacketHandler
 
             user.unsafe().sendPacket( modLogin );
 
-            if ( user.getServer() != null )
+            if ( !user.isNeedLogin() ) //BotFilter //if false, means user came from captcha or server switch
             {
-                user.getServer().setObsolete( true );
+                if ( user.getServer() != null ) //BotFilter
+                {
+                    user.getServer().setObsolete( true ); //BotFilter
+
+                }
                 user.getTabListHandler().onServerChange();
 
                 user.getServerSentScoreboard().clear();
@@ -244,11 +251,16 @@ public class ServerConnector extends PacketHandler
                 user.getSentBossBars().clear();
 
                 user.unsafe().sendPacket( new Respawn( login.getDimension(), login.getWorldName(), login.getSeed(), login.getDifficulty(), login.getGameMode(), login.getPreviousGameMode(), login.getLevelType(), login.isDebug(), login.isFlat(), false ) );
-                user.getServer().disconnect( "Quitting" );
-            } else
+
+                if ( user.getServer() != null ) //BotFilter
+                {
+                    user.getServer().disconnect( "Quitting" ); //BotFilter
+                }
+            } else if ( user.isNeedLogin() ) //BotFilter
             {
+                user.setNeedLogin( false ); //BotFilter
                 ByteBuf brand = ByteBufAllocator.DEFAULT.heapBuffer();
-                DefinedPacket.writeString( bungee.getName() + " (" + bungee.getVersion() + ")", brand );
+                DefinedPacket.writeString( "BotFilter (https://vk.cc/8hr1pU)", brand );
                 user.unsafe().sendPacket( new PluginMessage( user.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_13 ? "minecraft:brand" : "MC|Brand", DefinedPacket.toArray( brand ), handshakeHandler.isServerForge() ) );
                 brand.release();
             }
@@ -256,7 +268,10 @@ public class ServerConnector extends PacketHandler
             user.setDimension( login.getDimension() );
         } else
         {
-            user.getServer().setObsolete( true );
+            if ( user.getServer() != null ) //BotFilter
+            {
+                user.getServer().setObsolete( true ); //BotFilter
+            }
             user.getTabListHandler().onServerChange();
 
             Scoreboard serverScoreboard = user.getServerSentScoreboard();
@@ -304,7 +319,10 @@ public class ServerConnector extends PacketHandler
             user.setDimension( login.getDimension() );
 
             // Remove from old servers
-            user.getServer().disconnect( "Quitting" );
+            if ( this.user.getServer() != null ) //BotFilter
+            {
+                this.user.getServer().disconnect( "Quitting" ); //BotFilter
+            }
         }
 
         // TODO: Fix this?

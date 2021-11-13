@@ -1,10 +1,10 @@
 package net.md_5.bungee;
 
+
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Ticker;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Ticker;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -25,19 +25,12 @@ public class ConnectionThrottle
     @VisibleForTesting
     ConnectionThrottle(Ticker ticker, int throttleTime, int throttleLimit)
     {
-        this.throttle = CacheBuilder.newBuilder()
+        this.throttle = Caffeine.newBuilder()
                 .ticker( ticker )
-                .concurrencyLevel( Runtime.getRuntime().availableProcessors() )
+                //.concurrencyLevel( Runtime.getRuntime().availableProcessors() )
                 .initialCapacity( 100 )
                 .expireAfterWrite( throttleTime, TimeUnit.MILLISECONDS )
-                .build( new CacheLoader<InetAddress, AtomicInteger>()
-                {
-                    @Override
-                    public AtomicInteger load(InetAddress key) throws Exception
-                    {
-                        return new AtomicInteger();
-                    }
-                } );
+                .build( key -> new AtomicInteger() );
         this.throttleLimit = throttleLimit;
     }
 
@@ -49,7 +42,8 @@ public class ConnectionThrottle
         }
 
         InetAddress address = ( (InetSocketAddress) socketAddress ).getAddress();
-        AtomicInteger throttleCount = throttle.getIfPresent( address );
+
+        AtomicInteger throttleCount = throttle.get( address );
         if ( throttleCount != null )
         {
             throttleCount.decrementAndGet();
@@ -64,8 +58,13 @@ public class ConnectionThrottle
         }
 
         InetAddress address = ( (InetSocketAddress) socketAddress ).getAddress();
-        int throttleCount = throttle.getUnchecked( address ).incrementAndGet();
+        int throttleCount = throttle.get( address ).incrementAndGet();
 
         return throttleCount > throttleLimit;
+    }
+
+    public void cleanUP()
+    {
+        throttle.cleanUp();
     }
 }

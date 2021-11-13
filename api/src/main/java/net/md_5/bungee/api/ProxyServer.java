@@ -311,4 +311,8 @@ public abstract class ProxyServer
      */
     public abstract Title createTitle();
 
+    public abstract String getCustomBungeeName(); //BotFilter
+
+    public abstract int getOnlineCountBF(boolean fake); //BotFilter
+
 }

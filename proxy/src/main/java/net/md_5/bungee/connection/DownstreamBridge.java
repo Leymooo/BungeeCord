@@ -21,7 +21,6 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.ServerConnection.KeepAliveData;
 import net.md_5.bungee.UserConnection;
@@ -63,13 +62,31 @@ import net.md_5.bungee.protocol.packet.SetCompression;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 import net.md_5.bungee.tab.TabList;
 
-@RequiredArgsConstructor
+//@RequiredArgsConstructor //BotFilter - removed
 public class DownstreamBridge extends PacketHandler
 {
 
     private final ProxyServer bungee;
     private final UserConnection con;
     private final ServerConnection server;
+
+    //BotFilter start
+    public DownstreamBridge(ProxyServer bungee, UserConnection con, ServerConnection server)
+    {
+        this.bungee = bungee;
+        this.con = con;
+        this.server = server;
+
+        if ( !con.getDelayedPluginMessages().isEmpty() )
+        {
+            for ( PluginMessage msg : con.getDelayedPluginMessages() )
+            {
+                server.getCh().write( msg );
+            }
+            con.getDelayedPluginMessages().clear();
+        }
+    }
+    //BotFilter end
 
     @Override
     public void exception(Throwable t) throws Exception

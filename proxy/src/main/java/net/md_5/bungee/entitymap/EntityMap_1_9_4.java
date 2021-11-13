@@ -69,7 +69,7 @@ class EntityMap_1_9_4 extends EntityMap
             case 0x40 /* Attach Entity : PacketPlayOutMount */:
                 DefinedPacket.readVarInt( packet );
                 jumpIndex = packet.readerIndex();
-            // Fall through on purpose to int array of IDs
+                // Fall through on purpose to int array of IDs
             case 0x30 /* Destroy Entities : PacketPlayOutEntityDestroy */:
                 int count = DefinedPacket.readVarInt( packet );
                 int[] ids = new int[ count ];
