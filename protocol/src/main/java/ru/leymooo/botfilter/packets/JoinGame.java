@@ -11,6 +11,7 @@ import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.ProtocolConstants;
 import ru.leymooo.botfilter.utils.DimensionCreator;
+import se.llbit.nbt.Tag;
 
 @Data
 @RequiredArgsConstructor
@@ -35,13 +36,13 @@ public class JoinGame extends DefinedPacket
     private boolean debug = false;
     private boolean flat = true;
 
-    private byte[] dimensions116 = DimensionCreator.OVERWORLD.getFullCodecAsRawBytes( ProtocolConstants.MINECRAFT_1_16_1 );
-    private byte[] dimensions1162 = DimensionCreator.OVERWORLD.getFullCodecAsRawBytes( ProtocolConstants.MINECRAFT_1_16_2 );
-    private byte[] dimensions1182 = DimensionCreator.OVERWORLD.getFullCodecAsRawBytes( ProtocolConstants.MINECRAFT_1_18_2 );
-    private byte[] dimensions119 = DimensionCreator.OVERWORLD.getFullCodecAsRawBytes( ProtocolConstants.MINECRAFT_1_19 );
+    private Tag dimensions116 = DimensionCreator.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_16_1 );
+    private Tag dimensions1162 = DimensionCreator.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_16_2 );
+    private Tag dimensions1182 = DimensionCreator.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_18_2 );
+    private Tag dimensions119 = DimensionCreator.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_19 );
 
-    private byte[] dimension = DimensionCreator.OVERWORLD.getAttributesAsRawBytes( ProtocolConstants.MINECRAFT_1_16_2 );
-    private byte[] dimension1182 = DimensionCreator.OVERWORLD.getAttributesAsRawBytes( ProtocolConstants.MINECRAFT_1_18_2 );
+    private Tag dimension = DimensionCreator.OVERWORLD.encodeAttributes( ProtocolConstants.MINECRAFT_1_16_2 );
+    private Tag dimension1182 = DimensionCreator.OVERWORLD.encodeAttributes( ProtocolConstants.MINECRAFT_1_18_2 );
     public JoinGame()
     {
         entityId = 0;
@@ -74,16 +75,16 @@ public class JoinGame extends DefinedPacket
 
             if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_19 )
             {
-                buf.writeBytes( dimensions119 );
+                writeTag( dimensions119, buf );
             } else if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_18_2 )
             {
-                buf.writeBytes( dimensions1182 );
+                writeTag( dimensions1182, buf );
             } else if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16_2 )
             {
-                buf.writeBytes( dimensions1162 );
+                writeTag( dimensions1162, buf );
             } else
             {
-                buf.writeBytes( dimensions116 );
+                writeTag( dimensions116, buf );
             }
         }
 
@@ -94,10 +95,10 @@ public class JoinGame extends DefinedPacket
                 writeString( (String) "minecraft:overworld", buf );
             } else if ( protocolVersion == ProtocolConstants.MINECRAFT_1_18_2 )
             {
-                buf.writeBytes( dimension1182 );
+                writeTag( dimension1182, buf );
             } else
             {
-                buf.writeBytes( dimension );
+                writeTag( dimension, buf );
             }
             writeString( worldName, buf );
         } else if ( protocolVersion > ProtocolConstants.MINECRAFT_1_9 )

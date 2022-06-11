@@ -1,8 +1,5 @@
 package ru.leymooo.botfilter.utils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,38 +53,7 @@ public enum DimensionCreator
 
     private final int minY;
     private final int height;
-
-    public byte[] getFullCodecAsRawBytes(int protocolVersion)
-    {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-        try
-        {
-            getFullCodec( protocolVersion ).write( new DataOutputStream( out ) );
-        } catch ( IOException e )
-        {
-            throw new RuntimeException( e );
-        }
-
-        return out.toByteArray();
-    }
-
-    public byte[] getAttributesAsRawBytes(int protocolVersion)
-    {
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-        try
-        {
-            new NamedTag( "", encodeAttributes( protocolVersion ) ).write( new DataOutputStream( out ) );
-        } catch ( IOException e )
-        {
-            throw new RuntimeException( e );
-        }
-
-        return out.toByteArray();
-    }
-
-    private Tag getFullCodec(int protocolVersion)
+    public Tag getFullCodec(int protocolVersion)
     {
         CompoundTag attributes = encodeAttributes( protocolVersion );
 
@@ -121,7 +87,7 @@ public enum DimensionCreator
         return new NamedTag( "", root );
     }
 
-    private CompoundTag encodeAttributes(int protocolVersion)
+    public CompoundTag encodeAttributes(int protocolVersion)
     {
         Map<String, SpecificTag> attributes = new HashMap<>();
 
