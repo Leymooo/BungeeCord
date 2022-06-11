@@ -86,8 +86,12 @@ public enum DimensionCreator
 
         return new NamedTag( "", root );
     }
+    public Tag getAttributes(int protocolVersion)
+    {
+        return new NamedTag( "", encodeAttributes( protocolVersion ) );
+    }
 
-    public CompoundTag encodeAttributes(int protocolVersion)
+    private CompoundTag encodeAttributes(int protocolVersion)
     {
         Map<String, SpecificTag> attributes = new HashMap<>();
 

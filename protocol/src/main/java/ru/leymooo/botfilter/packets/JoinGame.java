@@ -41,8 +41,8 @@ public class JoinGame extends DefinedPacket
     private Tag dimensions1182 = DimensionCreator.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_18_2 );
     private Tag dimensions119 = DimensionCreator.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_19 );
 
-    private Tag dimension = DimensionCreator.OVERWORLD.encodeAttributes( ProtocolConstants.MINECRAFT_1_16_2 );
-    private Tag dimension1182 = DimensionCreator.OVERWORLD.encodeAttributes( ProtocolConstants.MINECRAFT_1_18_2 );
+    private Tag dimension = DimensionCreator.OVERWORLD.getAttributes( ProtocolConstants.MINECRAFT_1_16_2 );
+    private Tag dimension1182 = DimensionCreator.OVERWORLD.getAttributes( ProtocolConstants.MINECRAFT_1_18_2 );
     public JoinGame()
     {
         entityId = 0;
