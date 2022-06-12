@@ -3,36 +3,28 @@ package ru.leymooo.botfilter.caching;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import java.util.Random;
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import net.md_5.bungee.protocol.ProtocolConstants;
 import ru.leymooo.botfilter.packets.MapDataPacket;
 
 /**
  * @author Leymooo
  */
+@Setter
 public class CachedCaptcha
 {
-
-    //уже пора с этим чтото придумать
-    //В принципе я вроде чтото придумал для версии под Velocity, но будет ли она?....
     private static final int PACKETID_18 = 0x34;
     private static final int PACKETID_19and119 = 0x24;
 
     private static final int PACKETID_113and114and116 = 0x26;
     private static final int PACKETID_115and117 = 0x27;
     private static final int PACKETID_1162 = 0x25;
+    private final Random random = new Random();
+    private CaptchaHolder[] captchas = null;
 
-
-    private static final Random random = new Random();
-
-    private static final CaptchaHolder[] captchas = new CaptchaHolder[900];
-    private static final AtomicInteger counter = new AtomicInteger();
-
-    public static boolean generated = false;
-
-    public void createCaptchaPacket(MapDataPacket map, String answer)
+    public static CaptchaHolder createCaptchaPacket(MapDataPacket map, String answer)
     {
 
         ByteBuf byteBuf18 = PacketUtils.createPacket( map, PACKETID_18, ProtocolConstants.MINECRAFT_1_8 );
@@ -44,13 +36,36 @@ public class CachedCaptcha
         ByteBuf byteBuf117 = PacketUtils.createPacket( map, PACKETID_115and117, ProtocolConstants.MINECRAFT_1_17 );
         ByteBuf byteBuf119 = PacketUtils.createPacket( map, PACKETID_19and119, ProtocolConstants.MINECRAFT_1_19 );
 
-        captchas[counter.getAndIncrement()] = new CaptchaHolder( answer, byteBuf18, byteBuf19, byteBuf113, byteBuf114And116, byteBuf115, byteBuf1162, byteBuf117, byteBuf119 );
+        return new CaptchaHolder( answer, byteBuf18, byteBuf19, byteBuf113, byteBuf114And116, byteBuf115, byteBuf1162, byteBuf117, byteBuf119 );
+    }
 
-        //TODO: Do something with this shit.
+    public void clearCaptcha()
+    {
+        if ( captchas == null )
+        {
+            return;
+        }
+        for ( CaptchaHolder holder : captchas )
+        {
+            //TODO Придумать способ очищать байты в заполнителе автоматически
+            holder.getBuf18().release();
+            holder.getBuf19().release();
+            holder.getBuf113().release();
+            holder.getBuf114And116().release();
+            holder.getBuf115().release();
+            holder.getBuf1162().release();
+            holder.getBuf117().release();
+            holder.getBuf119().release();
+        }
+        captchas = null;
     }
 
     public CaptchaHolder randomCaptcha()
     {
+        if ( this.captchas == null )
+        {
+            return null;
+        }
         return captchas[random.nextInt( captchas.length )];
     }
 
@@ -63,7 +78,6 @@ public class CachedCaptcha
 
         public void write(Channel channel, int version, boolean flush)
         {
-
             if ( version == ProtocolConstants.MINECRAFT_1_8 )
             {
                 channel.write( buf18.retainedDuplicate(), channel.voidPromise() );

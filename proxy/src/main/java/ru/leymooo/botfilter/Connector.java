@@ -359,6 +359,11 @@ public class Connector extends MoveHandler
     private void sendCaptcha()
     {
         CaptchaHolder captchaHolder = PacketUtils.captchas.randomCaptcha();
+        if ( captchaHolder == null )
+        {
+            //TODO Кикать игрока если нет капчи
+            return;
+        }
         captchaAnswer = captchaHolder.getAnswer();
         channel.write( PacketUtils.getCachedPacket( PacketsPosition.SETSLOT_MAP ).get( version ), channel.voidPromise() );
         captchaHolder.write( channel, version, true );
