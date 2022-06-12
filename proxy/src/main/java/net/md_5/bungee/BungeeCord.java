@@ -113,6 +113,9 @@ public class BungeeCord extends ProxyServer
      * Current operation state.
      */
     public volatile boolean isRunning;
+    //BotFilter
+    @Getter
+    private volatile boolean enabled;
     /**
      * Configuration.
      */
@@ -334,6 +337,7 @@ public class BungeeCord extends ProxyServer
                 independentThreadStop( getTranslation( "restart" ), false );
             }
         } );
+        enabled = true;
     }
 
     public void startListeners()
