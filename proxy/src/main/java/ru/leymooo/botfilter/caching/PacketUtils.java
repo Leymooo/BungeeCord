@@ -23,6 +23,7 @@ import ru.leymooo.botfilter.packets.PlayerPositionAndLook;
 import ru.leymooo.botfilter.packets.SetExp;
 import ru.leymooo.botfilter.packets.SetSlot;
 import ru.leymooo.botfilter.packets.TimeUpdate;
+import ru.leymooo.botfilter.utils.DimensionCreator;
 
 /**
  * @author Leymooo
@@ -93,9 +94,24 @@ public class PacketUtils
         titles[1] = new CachedTitle( Settings.IMP.MESSAGES.CHECKING_TITLE_CAPTCHA, 5, 35, 10 );
         titles[2] = new CachedTitle( Settings.IMP.MESSAGES.CHECKING_TITLE_SUS, 5, 20, 10 );
 
+        int dimensionId = 0;
+        String worldName = "minecraft:overworld";
+        DimensionCreator dimensionCreator = DimensionCreator.OVERWORLD;
+        int dimensionType = Settings.IMP.DIMENSIONS.TYPE;
+        if ( dimensionType == 1 )
+        {
+            dimensionId = -1;
+            worldName = "minecraft:the_nether";
+            dimensionCreator = DimensionCreator.THE_NETHER;
+        } else if ( dimensionType == 2 )
+        {
+            dimensionId = 1;
+            worldName = "minecraft:the_end";
+            dimensionCreator = DimensionCreator.THE_END;
+        }
         DefinedPacket[] packets =
         {
-            new JoinGame( CLIENTID ), //0
+            new JoinGame( CLIENTID, dimensionId, worldName, dimensionCreator ), //0
             new EmptyChunkPacket( 0, 0 ), //1
             new TimeUpdate( 1, 23700 ), //2
             new PlayerAbilities( (byte) 6, 0f, 0f ), //3
