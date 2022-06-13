@@ -361,7 +361,7 @@ public class Connector extends MoveHandler
         CaptchaHolder captchaHolder = PacketUtils.captchas.randomCaptcha();
         if ( captchaHolder == null )
         {
-            //TODO Кикать игрока если нет капчи
+            failed( KickType.FAILED_CAPTCHA, "Captcha was not generated" );
             return;
         }
         captchaAnswer = captchaHolder.getAnswer();
