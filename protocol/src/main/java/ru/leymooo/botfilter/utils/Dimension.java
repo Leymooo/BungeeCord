@@ -25,21 +25,22 @@ import se.llbit.nbt.Tag;
 //Изменил: BoomEaro
 @RequiredArgsConstructor
 @Getter
-public enum DimensionCreator
+public enum Dimension
 {
-    OVERWORLD( "minecraft:overworld", 0, false, true, 0.0f,
+    OVERWORLD( "minecraft:overworld", 0, 0, false, true, 0.0f,
             "minecraft:infiniburn_overworld", false, true, true,
             "minecraft:overworld", true, 0, 0,
             256, 1.0f, false, false, 0, 256 ),
-    THE_NETHER( "minecraft:the_nether", 2, false, true, 0.0f,
+    THE_NETHER( "minecraft:the_nether", -1, 2, false, true, 0.0f,
                        "minecraft:infiniburn_nether", false, true, true,
                        "minecraft:the_nether", true, 0, 0,
                        256, 1.0f, false, false, 0, 256 ),
-    THE_END( "minecraft:the_end", 3, false, true, 0.0f,
+    THE_END( "minecraft:the_end", 1, 3, false, true, 0.0f,
                         "minecraft:infiniburn_end", false, true, true,
                         "minecraft:the_end", true, 0, 0,
                         256, 1.0f, false, false, 0, 256 );
     private final String key;
+    private final int dimensionId;
     private final int id;
 
     private final boolean piglinSafe;

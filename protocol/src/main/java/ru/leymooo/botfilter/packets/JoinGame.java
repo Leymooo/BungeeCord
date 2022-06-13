@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.ProtocolConstants;
-import ru.leymooo.botfilter.utils.DimensionCreator;
+import ru.leymooo.botfilter.utils.Dimension;
 import se.llbit.nbt.Tag;
 
 @Data
@@ -35,31 +35,31 @@ public class JoinGame extends DefinedPacket
     private boolean debug = false;
     private boolean flat = true;
 
-    private Tag dimensions116 = DimensionCreator.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_16_1 );
-    private Tag dimensions1162 = DimensionCreator.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_16_2 );
-    private Tag dimensions1182 = DimensionCreator.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_18_2 );
-    private Tag dimensions119 = DimensionCreator.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_19 );
+    private Tag dimensions116 = Dimension.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_16_1 );
+    private Tag dimensions1162 = Dimension.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_16_2 );
+    private Tag dimensions1182 = Dimension.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_18_2 );
+    private Tag dimensions119 = Dimension.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_19 );
 
-    private Tag dimension = DimensionCreator.OVERWORLD.getAttributes( ProtocolConstants.MINECRAFT_1_16_2 );
-    private Tag dimension1182 = DimensionCreator.OVERWORLD.getAttributes( ProtocolConstants.MINECRAFT_1_18_2 );
+    private Tag dimension = Dimension.OVERWORLD.getAttributes( ProtocolConstants.MINECRAFT_1_16_2 );
+    private Tag dimension1182 = Dimension.OVERWORLD.getAttributes( ProtocolConstants.MINECRAFT_1_18_2 );
     public JoinGame()
     {
         this.entityId = 0;
     }
-    public JoinGame(int entityId, int dimensionId, String worldType, DimensionCreator worldTag)
+    public JoinGame(int entityId, Dimension dimension)
     {
         this.entityId = entityId;
-        this.dimensionId = dimensionId;
-        this.worldName = worldType;
-        this.worldNames = new HashSet<>( Arrays.asList( worldType ) );
+        this.dimensionId = dimension.getDimensionId();
+        this.worldName = dimension.getKey();
+        this.worldNames = new HashSet<>( Arrays.asList( dimension.getKey() ) );
 
-        this.dimensions116 = worldTag.getFullCodec( ProtocolConstants.MINECRAFT_1_16_1 );
-        this.dimensions1162 = worldTag.getFullCodec( ProtocolConstants.MINECRAFT_1_16_2 );
-        this.dimensions1182 = worldTag.getFullCodec( ProtocolConstants.MINECRAFT_1_18_2 );
-        this.dimensions119 = worldTag.getFullCodec( ProtocolConstants.MINECRAFT_1_19 );
+        this.dimensions116 = dimension.getFullCodec( ProtocolConstants.MINECRAFT_1_16_1 );
+        this.dimensions1162 = dimension.getFullCodec( ProtocolConstants.MINECRAFT_1_16_2 );
+        this.dimensions1182 = dimension.getFullCodec( ProtocolConstants.MINECRAFT_1_18_2 );
+        this.dimensions119 = dimension.getFullCodec( ProtocolConstants.MINECRAFT_1_19 );
 
-        this.dimension = worldTag.getAttributes( ProtocolConstants.MINECRAFT_1_16_2 );
-        this.dimension1182 = worldTag.getAttributes( ProtocolConstants.MINECRAFT_1_18_2 );
+        this.dimension = dimension.getAttributes( ProtocolConstants.MINECRAFT_1_16_2 );
+        this.dimension1182 = dimension.getAttributes( ProtocolConstants.MINECRAFT_1_18_2 );
     }
 
     @Override
