@@ -66,6 +66,10 @@ public class CachedCaptcha
         {
             return null;
         }
+        if ( this.captchas.length == 0 )
+        {
+            return null;
+        }
         return captchas[random.nextInt( captchas.length )];
     }
 
