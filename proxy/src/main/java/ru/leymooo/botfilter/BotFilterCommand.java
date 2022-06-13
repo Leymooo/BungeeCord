@@ -14,6 +14,8 @@ import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.api.CommandSender;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Command;
+import ru.leymooo.botfilter.captcha.CaptchaGeneration;
+import ru.leymooo.botfilter.captcha.CaptchaGenerationException;
 import ru.leymooo.botfilter.config.Settings;
 
 public class BotFilterCommand extends Command
@@ -39,6 +41,7 @@ public class BotFilterCommand extends Command
             sender.sendMessage( "§r> §lbotfilter stat §6- §aПоказать статистику" );
             sender.sendMessage( "§r> §lbotfilter export §6- §aВыгрузить список игроков, которые прошли проверку" );
             sender.sendMessage( "§r> §lbotfilter protection on/off §6- §aВключить или выключить ручной режим 'под атакой'" );
+            sender.sendMessage( "§r> §lbotfilter generate §6- §aСгенерировать новую капчу" );
             sender.sendMessage( "§r--------------- §bBotFilter §r-----------------" );
         } else if ( args[0].equalsIgnoreCase( "reload" ) )
         {
@@ -52,6 +55,16 @@ public class BotFilterCommand extends Command
         {
             export( sender, args );
             sender.sendMessage( "§aКоманда выполнена" );
+        } else if ( args[0].equalsIgnoreCase( "generate" ) )
+        {
+            try
+            {
+                CaptchaGeneration.generateImages();
+                sender.sendMessage( "§aКоманда выполнена" );
+            } catch ( CaptchaGenerationException e )
+            {
+                sender.sendMessage( "§cОшибка при попытке сгенерировать капчу: " + e.getMessage() );
+            }
         } else if ( args[0].equalsIgnoreCase( "protection" ) )
         {
             if ( args.length >= 2 )

@@ -32,11 +32,11 @@ public class CaptchaGeneration
 {
     private static volatile boolean generation = false;
 
-    public static synchronized void generateImages()
+    public static synchronized void generateImages() throws CaptchaGenerationException
     {
         if ( generation )
         {
-            return;
+            throw new CaptchaGenerationException( "Капча уже генерируется!" );
         }
 
         generation = true;
