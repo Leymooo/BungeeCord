@@ -49,6 +49,8 @@ public class CaptchaGeneration
         {
             try
             {
+                //Перед началом генерации, нужно удалить старую капчу, освободив байтовый буфер.
+                PacketUtils.captchas.clearCaptcha();
                 BungeeCord.getInstance().getLogger().log( Level.INFO, "[BotFilter] " + ( BungeeCord.getInstance().isEnabled() ? "Начата генерация капчи в фоне." : "Генерация капчи продолжится параллельно с загрузкой BungeeCord." ) );
                 ExecutorService executor = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors(),
                         new CaptchaThreadFactory() );
