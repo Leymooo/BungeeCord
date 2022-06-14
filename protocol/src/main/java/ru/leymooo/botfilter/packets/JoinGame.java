@@ -35,16 +35,16 @@ public class JoinGame extends DefinedPacket
     private boolean debug = false;
     private boolean flat = true;
 
-    private Tag dimensions116 = Dimension.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_16_1 );
-    private Tag dimensions1162 = Dimension.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_16_2 );
-    private Tag dimensions1182 = Dimension.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_18_2 );
-    private Tag dimensions119 = Dimension.OVERWORLD.getFullCodec( ProtocolConstants.MINECRAFT_1_19 );
+    private Tag dimensions116;
+    private Tag dimensions1162;
+    private Tag dimensions1182;
+    private Tag dimensions119;
 
-    private Tag dimension = Dimension.OVERWORLD.getAttributes( ProtocolConstants.MINECRAFT_1_16_2 );
-    private Tag dimension1182 = Dimension.OVERWORLD.getAttributes( ProtocolConstants.MINECRAFT_1_18_2 );
+    private Tag dimension;
+    private Tag dimension1182;
     public JoinGame()
     {
-        this.entityId = 0;
+        this ( 0, Dimension.OVERWORLD );
     }
     public JoinGame(int entityId, Dimension dimension)
     {
