@@ -22,6 +22,7 @@ import ru.leymooo.botfilter.caching.PacketUtils;
 import ru.leymooo.botfilter.captcha.generator.CaptchaPainter;
 import ru.leymooo.botfilter.captcha.generator.map.CraftMapCanvas;
 import ru.leymooo.botfilter.captcha.generator.map.MapPalette;
+import ru.leymooo.botfilter.config.Settings;
 import ru.leymooo.botfilter.packets.MapDataPacket;
 
 /**
@@ -61,18 +62,7 @@ public class CaptchaGeneration
             CaptchaPainter painter = new CaptchaPainter();
             MapPalette.prepareColors();
 
-            int captchaCount = 900;
-            try
-            {
-                //TODO Как лучше быть? Использовать конфиг или через аргумент запуска?
-                String captchaCountString = System.getProperty( "captchaCount" );
-                if ( captchaCountString != null && !captchaCountString.isEmpty() )
-                {
-                    captchaCount = Integer.parseInt( captchaCountString );
-                }
-            } catch ( Exception ignored )
-            {
-            }
+            int captchaCount = Settings.IMP.CAPTCHA.COUNT;
 
             if ( captchaCount <= 0 )
             {
