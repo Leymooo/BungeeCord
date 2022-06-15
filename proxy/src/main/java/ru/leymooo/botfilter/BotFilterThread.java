@@ -135,9 +135,12 @@ public class BotFilterThread
                     }
                 }
                 FailedUtils.flushQueue();
-                //TODO Не понятно, долго или часто это пока что
-                //Каждые 6 часов капча сама регенерируется
-                if ( ++counterCaptcha == ( 12 * 60 ) * 6 )
+                int captchaMin = Settings.IMP.CAPTCHA.CAPTCHA_REGENERATION_TIME;
+                if ( captchaMin <= 0 )
+                {
+                    captchaMin = 1;
+                }
+                if ( ++counterCaptcha == ( 12 * captchaMin ) )
                 {
                     counterCaptcha = 0;
 
