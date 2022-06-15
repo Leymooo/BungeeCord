@@ -2,16 +2,14 @@ package ru.leymooo.botfilter.caching;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
-import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolConstants;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.SystemChat;
 import ru.leymooo.botfilter.config.Settings;
+import ru.leymooo.botfilter.utils.ColorsUtils;
 
 /**
  * @author Leymooo
@@ -33,12 +31,8 @@ public class CachedMessage
 
     private static DefinedPacket createMessagePacket(String message, boolean is119)
     {
-        message = ComponentSerializer.toString(
-            TextComponent.fromLegacyText(
-                ChatColor.translateAlternateColorCodes( '&',
-                    message.replace( "%prefix%", Settings.IMP.MESSAGES.PREFIX ).replace( "%nl%", "\n" ) ) ) );
-
-
+        message = ColorsUtils.serializeTextWithColorToJson(
+                message.replace( "%prefix%", Settings.IMP.MESSAGES.PREFIX ).replace( "%nl%", "\n" ) );
         if ( is119 )
         {
             return new SystemChat( message, ChatMessageType.SYSTEM.ordinal() );

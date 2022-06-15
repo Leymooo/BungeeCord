@@ -5,9 +5,6 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import java.util.HashMap;
 import java.util.Random;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Protocol;
@@ -23,6 +20,7 @@ import ru.leymooo.botfilter.packets.PlayerPositionAndLook;
 import ru.leymooo.botfilter.packets.SetExp;
 import ru.leymooo.botfilter.packets.SetSlot;
 import ru.leymooo.botfilter.packets.TimeUpdate;
+import ru.leymooo.botfilter.utils.ColorsUtils;
 import ru.leymooo.botfilter.utils.Dimension;
 
 /**
@@ -151,10 +149,8 @@ public class PacketUtils
 
     private static DefinedPacket createKickPacket(String message)
     {
-        return new Kick( ComponentSerializer.toString(
-            TextComponent.fromLegacyText(
-                ChatColor.translateAlternateColorCodes( '&',
-                    message.replace( "%prefix%", Settings.IMP.MESSAGES.PREFIX ).replace( "%nl%", "\n" ) ) ) ) );
+        return new Kick( ColorsUtils.serializeTextWithColorToJson(
+                        message.replace( "%prefix%", Settings.IMP.MESSAGES.PREFIX ).replace( "%nl%", "\n" ) ) );
     }
 
 
