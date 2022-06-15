@@ -20,7 +20,6 @@ import ru.leymooo.botfilter.packets.MapDataPacket;
 public class CaptchaGenerationTask implements Runnable
 {
     private final ExecutorService executor;
-    private final CaptchaPainter painter;
     private final List<Font> fonts;
     private final List<CachedCaptcha.CaptchaHolder> holders;
     @Override
@@ -30,7 +29,8 @@ public class CaptchaGenerationTask implements Runnable
         {
             Random rnd = ThreadLocalRandom.current();
             String answer = randomAnswer( rnd );
-            BufferedImage image = this.painter.draw( this.fonts.get( rnd.nextInt( this.fonts.size() ) ), randomNotWhiteColor( rnd ), answer );
+            CaptchaPainter painter = new CaptchaPainter( rnd );
+            BufferedImage image = painter.draw( this.fonts.get( rnd.nextInt( this.fonts.size() ) ), randomNotWhiteColor( rnd ), answer );
             final CraftMapCanvas map = new CraftMapCanvas();
             map.drawImage( 0, 0, image );
             MapDataPacket packet = new MapDataPacket( 0, (byte) 0, map.getMapData() );

@@ -14,7 +14,6 @@ import lombok.experimental.UtilityClass;
 import net.md_5.bungee.BungeeCord;
 import ru.leymooo.botfilter.caching.CachedCaptcha;
 import ru.leymooo.botfilter.caching.PacketUtils;
-import ru.leymooo.botfilter.captcha.generator.CaptchaPainter;
 import ru.leymooo.botfilter.captcha.generator.map.MapPalette;
 import ru.leymooo.botfilter.config.Settings;
 
@@ -55,7 +54,6 @@ public class CaptchaGeneration
                             .setPriority( Thread.MIN_PRIORITY )
                             .setNameFormat( "CaptchaGenerationTask-thread-%d" )
                             .build() );
-            CaptchaPainter painter = new CaptchaPainter();
             MapPalette.prepareColors();
 
             int captchaCount = Settings.IMP.CAPTCHA.COUNT;
@@ -69,7 +67,7 @@ public class CaptchaGeneration
 
             for ( int i = 1; i <= captchaCount; i++ )
             {
-                executor.execute( new CaptchaGenerationTask( executor, painter, fonts, holders ) );
+                executor.execute( new CaptchaGenerationTask( executor, fonts, holders ) );
             }
 
             long start = System.currentTimeMillis();
