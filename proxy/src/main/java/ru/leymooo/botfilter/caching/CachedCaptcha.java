@@ -39,7 +39,7 @@ public class CachedCaptcha
         return new CaptchaHolder( answer, byteBuf18, byteBuf19, byteBuf113, byteBuf114And116, byteBuf115, byteBuf1162, byteBuf117, byteBuf119 );
     }
 
-    public void clearCaptcha()
+    public void clear()
     {
         if ( captchas == null )
         {
@@ -47,15 +47,7 @@ public class CachedCaptcha
         }
         for ( CaptchaHolder holder : captchas )
         {
-            //TODO Придумать способ очищать байты в заполнителе автоматически
-            holder.getBuf18().release();
-            holder.getBuf19().release();
-            holder.getBuf113().release();
-            holder.getBuf114And116().release();
-            holder.getBuf115().release();
-            holder.getBuf1162().release();
-            holder.getBuf117().release();
-            holder.getBuf119().release();
+            holder.release();
         }
         captchas = null;
     }
@@ -117,6 +109,17 @@ public class CachedCaptcha
             {
                 channel.flush();
             }
+        }
+        public void release()
+        {
+            buf18.release();
+            buf19.release();
+            buf113.release();
+            buf114And116.release();
+            buf115.release();
+            buf1162.release();
+            buf117.release();
+            buf119.release();
         }
     }
 }

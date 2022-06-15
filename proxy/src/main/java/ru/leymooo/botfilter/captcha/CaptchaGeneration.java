@@ -54,7 +54,7 @@ public class CaptchaGeneration
                     new Font( Font.SERIF, Font.PLAIN, 50 ),
                     new Font( Font.MONOSPACED, Font.BOLD, 50 ) );
             //Перед началом генерации, нужно удалить старую капчу, освободив байтовый буфер.
-            PacketUtils.captchas.clearCaptcha();
+            PacketUtils.captchas.clear();
             BungeeCord.getInstance().getLogger().log( Level.INFO, "[BotFilter] " + ( BungeeCord.getInstance().isEnabled() ? "Начата генерация капчи в фоне." : "Генерация капчи продолжится параллельно с загрузкой BungeeCord." ) );
             ExecutorService executor = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors(),
                     new CaptchaThreadFactory() );
