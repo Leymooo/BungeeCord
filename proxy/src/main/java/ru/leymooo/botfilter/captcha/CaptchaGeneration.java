@@ -96,8 +96,8 @@ public class CaptchaGeneration
                     BungeeCord.getInstance().getLogger().log( Level.INFO, "[BotFilter] Генерирую капчу [" + ( captchaCount - ex.getQueue().size() ) + "/" + captchaCount + "]" );
                 }
 
-                //Текущий список всех капч каждую секунду переобразуем в массив и вставляем, чтобы хоть какая та часть была доступна во время генерации
-                PacketUtils.captchas.setCaptchas( holders.toArray( new CachedCaptcha.CaptchaHolder[0] ) );
+                //Текущий список всех капч каждую секунду вставляем в новый список для гарантии потокобезопасности.
+                PacketUtils.captchas.setCaptchas( new ArrayList<>( holders ) );
                 try
                 {
                     Thread.sleep( 1000L );
@@ -112,7 +112,7 @@ public class CaptchaGeneration
             executor.shutdownNow();
 
             //Окончательно устанавливаем оставшиеся капчи
-            PacketUtils.captchas.setCaptchas( holders.toArray( new CachedCaptcha.CaptchaHolder[0] ) );
+            PacketUtils.captchas.setCaptchas( new ArrayList<>( holders ) );
             System.gc();
             BungeeCord.getInstance().getLogger().log( Level.INFO, "[BotFilter] Капча сгенерирована за {0} мс", System.currentTimeMillis() - start );
         } catch ( Exception e )
