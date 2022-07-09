@@ -209,6 +209,8 @@ public class Settings extends Config
 
         @Comment("Отключить ли проверку для клиентов с Geyser-standalone? Тип авторищации должен быть floodgate.")
         public boolean SKIP_GEYSER = false;
+        @Comment("Как долго вы хотите, чтобы черный список был для игрока")
+        public int BLACKLIST_TIME = 10;
         /*
         @Comment(
                 {
