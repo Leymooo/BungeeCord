@@ -3,7 +3,7 @@ package ru.leymooo.botfilter.caching;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -22,7 +22,6 @@ public class CachedCaptcha
     private static final int PACKETID_113and114and116 = 0x26;
     private static final int PACKETID_115and117 = 0x27;
     private static final int PACKETID_1162 = 0x25;
-    private final Random random = new Random();
     private List<CaptchaHolder> captchas = null;
 
     public static CaptchaHolder createCaptchaPacket(MapDataPacket map, String answer)
@@ -55,15 +54,11 @@ public class CachedCaptcha
 
     public CaptchaHolder randomCaptcha()
     {
-        if ( this.captchas == null )
+        if ( this.captchas == null || this.captchas.isEmpty() )
         {
             return null;
         }
-        if ( this.captchas.size() == 0 )
-        {
-            return null;
-        }
-        return captchas.get( random.nextInt( captchas.size() ) );
+        return captchas.get( ThreadLocalRandom.current().nextInt( captchas.size() ) );
     }
 
     @RequiredArgsConstructor
