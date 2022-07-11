@@ -138,7 +138,7 @@ public class BotFilterThread
                 int captchaMin = Settings.IMP.CAPTCHA.CAPTCHA_REGENERATION_TIME;
                 if ( captchaMin <= 0 )
                 {
-                    captchaMin = 1;
+                    continue;
                 }
                 if ( ++counterCaptcha == ( 12 * captchaMin ) )
                 {
