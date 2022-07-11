@@ -115,7 +115,7 @@ public class BungeeCord extends ProxyServer
     public volatile boolean isRunning;
     //BotFilter
     @Getter
-    private volatile boolean enabled;
+    private boolean enabled;
     /**
      * Configuration.
      */
