@@ -63,7 +63,7 @@ public class BotFilterCommand extends Command
                 sender.sendMessage( "§aКоманда выполнена" );
             } catch ( CaptchaGenerationException e )
             {
-                sender.sendMessage( "§cОшибка при попытке сгенерировать капчу: " + e.getMessage() );
+                sender.sendMessage( "§cОшибка: " + e.getMessage() );
             }
         } else if ( args[0].equalsIgnoreCase( "protection" ) )
         {
