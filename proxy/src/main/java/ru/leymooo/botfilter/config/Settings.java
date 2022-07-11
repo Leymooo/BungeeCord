@@ -49,7 +49,7 @@ public class Settings extends Config
     @Comment("Проверять ли на бота при заходе на сервер во время бот атаки, не зависимо проходил ли проверку или нет")
     public boolean FORCE_CHECK_ON_ATTACK = true;
     @Comment("Показывать ли онлайн с фильтра")
-    public boolean SHOW_ONLINE = false;
+    public boolean SHOW_ONLINE = true;
     @Comment("Сколько времени есть у игрока чтобы пройти защиту. В миллисекундах. 1 сек = 1000")
     public int TIME_OUT = 12700;
     @Comment("Включить ли фикс от 'Team 'xxx' already exist in this scoreboard'")
