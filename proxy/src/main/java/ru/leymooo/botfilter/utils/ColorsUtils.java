@@ -114,10 +114,7 @@ public class ColorsUtils
                     return true;
                 }
             }
-
             return false;
         }
-
     }
-
 }
