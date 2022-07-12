@@ -5,6 +5,7 @@ import java.awt.Font;
 import java.awt.image.BufferedImage;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import lombok.AllArgsConstructor;
@@ -17,13 +18,12 @@ import ru.leymooo.botfilter.packets.MapDataPacket;
 
 @Data
 @AllArgsConstructor
-public class CaptchaGenerationTask implements Runnable
+public class CaptchaGenerationTask implements Callable<CachedCaptcha.CaptchaHolder>
 {
     private final ExecutorService executor;
     private final List<Font> fonts;
-    private final List<CachedCaptcha.CaptchaHolder> holders;
     @Override
-    public void run()
+    public CachedCaptcha.CaptchaHolder call()
     {
         try
         {
@@ -34,14 +34,14 @@ public class CaptchaGenerationTask implements Runnable
             final CraftMapCanvas map = new CraftMapCanvas();
             map.drawImage( 0, 0, image );
             MapDataPacket packet = new MapDataPacket( 0, (byte) 0, map.getMapData() );
-            CachedCaptcha.CaptchaHolder holder = CachedCaptcha.createCaptchaPacket( packet, answer );
-            this.holders.add( holder );
+            return CachedCaptcha.createCaptchaPacket( packet, answer );
         } catch ( Throwable e )
         {
             //Прекращаем генерацию если случилась любая ошибка
             e.printStackTrace();
             this.executor.shutdownNow();
         }
+        return null;
     }
 
     private static Color randomNotWhiteColor(Random rnd)

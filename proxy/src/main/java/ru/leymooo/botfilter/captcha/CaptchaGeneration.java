@@ -4,10 +4,11 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.awt.Font;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import lombok.experimental.UtilityClass;
@@ -62,14 +63,17 @@ public class CaptchaGeneration
             {
                 captchaCount = 1;
             }
-
-            List<CachedCaptcha.CaptchaHolder> holders = Collections.synchronizedList( new ArrayList<>() );
-
+            List<CaptchaGenerationTask> tasks = new ArrayList<>();
             for ( int i = 1; i <= captchaCount; i++ )
             {
-                executor.execute( new CaptchaGenerationTask( executor, fonts, holders ) );
+                tasks.add( new CaptchaGenerationTask( executor, fonts ) );
             }
 
+            List<Future<CachedCaptcha.CaptchaHolder>> futureHolders = new ArrayList<>();
+            for ( CaptchaGenerationTask task : tasks )
+            {
+                futureHolders.add( executor.submit( task ) );
+            }
             long start = System.currentTimeMillis();
             ThreadPoolExecutor ex = (ThreadPoolExecutor) executor;
             while ( ex.getActiveCount() != 0 )
@@ -79,9 +83,8 @@ public class CaptchaGeneration
                 {
                     BungeeCord.getInstance().getLogger().log( Level.INFO, "[BotFilter] Генерирую капчу [" + ( captchaCount - ex.getQueue().size() ) + "/" + captchaCount + "]" );
                 }
-
-                //Текущий список всех капч каждую секунду вставляем в новый список для гарантии потокобезопасности.
-                PacketUtils.captchas.setCaptchas( new ArrayList<>( holders ) );
+                //Вставляем сгенерированные капчи
+                PacketUtils.captchas.setCaptchas( findDoneTasks( futureHolders ) );
                 try
                 {
                     Thread.sleep( 1000L );
@@ -92,11 +95,10 @@ public class CaptchaGeneration
                     return;
                 }
             }
-
             executor.shutdownNow();
 
             //Окончательно устанавливаем оставшиеся капчи
-            PacketUtils.captchas.setCaptchas( new ArrayList<>( holders ) );
+            PacketUtils.captchas.setCaptchas( findDoneTasks( futureHolders ) );
             System.gc();
             BungeeCord.getInstance().getLogger().log( Level.INFO, "[BotFilter] Капча сгенерирована за {0} мс", System.currentTimeMillis() - start );
         } catch ( Exception e )
@@ -106,5 +108,21 @@ public class CaptchaGeneration
         {
             generation = false;
         }
+    }
+    private static List<CachedCaptcha.CaptchaHolder> findDoneTasks(List<Future<CachedCaptcha.CaptchaHolder>> futureHolders) throws ExecutionException, InterruptedException
+    {
+        List<CachedCaptcha.CaptchaHolder> doneTasks = new ArrayList<>();
+        for ( Future<CachedCaptcha.CaptchaHolder> future : futureHolders )
+        {
+            if ( future.isDone() )
+            {
+                CachedCaptcha.CaptchaHolder holder = future.get();
+                if ( holder != null )
+                {
+                    doneTasks.add( holder );
+                }
+            }
+        }
+        return doneTasks;
     }
 }
