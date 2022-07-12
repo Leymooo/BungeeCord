@@ -1,21 +1,22 @@
 package ru.leymooo.botfilter.captcha;
 
-import java.awt.Color;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.awt.Font;
-import java.awt.image.BufferedImage;
-import java.util.Random;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import lombok.experimental.UtilityClass;
 import net.md_5.bungee.BungeeCord;
 import ru.leymooo.botfilter.caching.CachedCaptcha;
 import ru.leymooo.botfilter.caching.PacketUtils;
-import ru.leymooo.botfilter.captcha.generator.CaptchaPainter;
-import ru.leymooo.botfilter.captcha.generator.map.CraftMapCanvas;
 import ru.leymooo.botfilter.captcha.generator.map.MapPalette;
-import ru.leymooo.botfilter.packets.MapDataPacket;
+import ru.leymooo.botfilter.config.Settings;
 
 /**
  * @author Leymooo
@@ -23,98 +24,105 @@ import ru.leymooo.botfilter.packets.MapDataPacket;
 @UtilityClass
 public class CaptchaGeneration
 {
-    Random rnd = new Random();
+    private static volatile boolean generation = false;
 
-    public void generateImages()
+    public static synchronized void generateImages() throws CaptchaGenerationException
     {
-        Font[] fonts = new Font[]
+        if ( generation )
         {
-            new Font( Font.SANS_SERIF, Font.PLAIN, 50 ),
-            new Font( Font.SERIF, Font.PLAIN, 50 ),
-            new Font( Font.MONOSPACED, Font.BOLD, 50 )
-        };
-
-        ExecutorService executor = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors() );
-        CaptchaPainter painter = new CaptchaPainter();
-        MapPalette.prepareColors();
-        for ( int i = 100; i <= 999; i++ )
-        {
-            executor.execute( () ->
-            {
-                String answer = randomAnswer();
-                BufferedImage image = painter.draw( fonts[rnd.nextInt( fonts.length )], randomNotWhiteColor(), answer );
-                final CraftMapCanvas map = new CraftMapCanvas();
-                map.drawImage( 0, 0, image );
-                MapDataPacket packet = new MapDataPacket( 0, (byte) 0, map.getMapData() );
-                PacketUtils.captchas.createCaptchaPacket( packet, answer );
-            } );
+            throw new CaptchaGenerationException( "Капча уже генерируется!" );
         }
 
-        long start = System.currentTimeMillis();
-        ThreadPoolExecutor ex = (ThreadPoolExecutor) executor;
-        while ( ex.getActiveCount() != 0 )
+        generation = true;
+        Thread thread = new Thread( CaptchaGeneration::generateCaptchas );
+        thread.setName( "CaptchaGenerationProvider-thread" );
+        thread.setPriority( Thread.MIN_PRIORITY );
+        thread.start();
+    }
+    private static void generateCaptchas()
+    {
+        try
         {
-            BungeeCord.getInstance().getLogger().log( Level.INFO, "[BotFilter] Генерирую капчу [{0}/900]", 900 - ex.getQueue().size() - ex.getActiveCount() );
-            try
+            List<Font> fonts = Arrays.asList(
+                    new Font( Font.SANS_SERIF, Font.PLAIN, 50 ),
+                    new Font( Font.SERIF, Font.PLAIN, 50 ),
+                    new Font( Font.MONOSPACED, Font.BOLD, 50 ) );
+            //Перед началом генерации, нужно удалить старую капчу, освободив байтовый буфер.
+            PacketUtils.captchas.clear();
+            BungeeCord.getInstance().getLogger().log( Level.INFO, "[BotFilter] " + ( BungeeCord.getInstance().isEnabled() ? "Начата генерация капчи в фоне." : "Генерация капчи продолжится параллельно с загрузкой BungeeCord." ) );
+            ExecutorService executor = Executors.newFixedThreadPool( Runtime.getRuntime().availableProcessors(),
+                    new ThreadFactoryBuilder()
+                            .setPriority( Thread.MIN_PRIORITY )
+                            .setNameFormat( "CaptchaGenerationTask-thread-%d" )
+                            .build() );
+            MapPalette.prepareColors();
+
+            int captchaCount = Settings.IMP.CAPTCHA.COUNT;
+
+            if ( captchaCount <= 0 )
             {
-                Thread.sleep( 1000L );
-            } catch ( InterruptedException ex1 )
+                captchaCount = 1;
+            }
+            List<CaptchaGenerationTask> tasks = new ArrayList<>();
+            for ( int i = 1; i <= captchaCount; i++ )
             {
-                BungeeCord.getInstance().getLogger().log( Level.WARNING, "[BotFilter] Не могу сгенерировать капчу. Выключаю банджу", ex1 );
-                System.exit( 0 );
-                return;
+                tasks.add( new CaptchaGenerationTask( executor, fonts ) );
+            }
+
+            List<Future<CachedCaptcha.CaptchaHolder>> futureHolders = new ArrayList<>();
+            for ( CaptchaGenerationTask task : tasks )
+            {
+                futureHolders.add( executor.submit( task ) );
+            }
+            long start = System.currentTimeMillis();
+            ThreadPoolExecutor ex = (ThreadPoolExecutor) executor;
+            while ( ex.getActiveCount() != 0 )
+            {
+                //Отображаем прогресс генерации только после полной загрузки банжи, чтобы логи не путались с другими важными логами при включении
+                if ( BungeeCord.getInstance().isEnabled() )
+                {
+                    BungeeCord.getInstance().getLogger().log( Level.INFO, "[BotFilter] Генерирую капчу [" + ( captchaCount - ex.getQueue().size() ) + "/" + captchaCount + "]" );
+                }
+                //Вставляем сгенерированные капчи
+                PacketUtils.captchas.setCaptchas( findDoneTasks( futureHolders ) );
+                try
+                {
+                    Thread.sleep( 1000L );
+                } catch ( InterruptedException ex1 )
+                {
+                    BungeeCord.getInstance().getLogger().log( Level.WARNING, "[BotFilter] Не могу сгенерировать капчу. Выключаю банджу", ex1 );
+                    System.exit( 0 );
+                    return;
+                }
+            }
+            executor.shutdownNow();
+
+            //Окончательно устанавливаем оставшиеся капчи
+            PacketUtils.captchas.setCaptchas( findDoneTasks( futureHolders ) );
+            System.gc();
+            BungeeCord.getInstance().getLogger().log( Level.INFO, "[BotFilter] Капча сгенерирована за {0} мс", System.currentTimeMillis() - start );
+        } catch ( Exception e )
+        {
+            e.printStackTrace();
+        } finally
+        {
+            generation = false;
+        }
+    }
+    private static List<CachedCaptcha.CaptchaHolder> findDoneTasks(List<Future<CachedCaptcha.CaptchaHolder>> futureHolders) throws ExecutionException, InterruptedException
+    {
+        List<CachedCaptcha.CaptchaHolder> doneTasks = new ArrayList<>();
+        for ( Future<CachedCaptcha.CaptchaHolder> future : futureHolders )
+        {
+            if ( future.isDone() )
+            {
+                CachedCaptcha.CaptchaHolder holder = future.get();
+                if ( holder != null )
+                {
+                    doneTasks.add( holder );
+                }
             }
         }
-        CachedCaptcha.generated = true;
-        executor.shutdownNow();
-        System.gc();
-        BungeeCord.getInstance().getLogger().log( Level.INFO, "[BotFilter] Капча сгенерированна за {0} мс", System.currentTimeMillis() - start );
-    }
-
-
-    private Color randomNotWhiteColor()
-    {
-        Color color = MapPalette.colors[rnd.nextInt( MapPalette.colors.length )];
-
-        int r = color.getRed();
-        int g = color.getGreen();
-        int b = color.getBlue();
-
-        if ( r == 255 && g == 255 && b == 255 )
-        {
-            return randomNotWhiteColor();
-        }
-        if ( r == 220 && g == 220 && b == 220 )
-        {
-            return randomNotWhiteColor();
-        }
-        if ( r == 199 && g == 199 && b == 199 )
-        {
-            return randomNotWhiteColor();
-        }
-        if ( r == 255 && g == 252 && b == 245 )
-        {
-            return randomNotWhiteColor();
-        }
-        if ( r == 220 && g == 217 && b == 211 )
-        {
-            return randomNotWhiteColor();
-        }
-        if ( r == 247 && g == 233 && b == 163 )
-        {
-            return randomNotWhiteColor();
-        }
-        return color;
-    }
-
-    private String randomAnswer()
-    {
-        if ( rnd.nextBoolean() )
-        {
-            return Integer.toString( rnd.nextInt( ( 99999 - 10000 ) + 1 ) + 10000 );
-        } else
-        {
-            return Integer.toString( rnd.nextInt( ( 9999 - 1000 ) + 1 ) + 1000 );
-        }
+        return doneTasks;
     }
 }

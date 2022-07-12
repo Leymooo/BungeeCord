@@ -14,14 +14,16 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
 import java.awt.image.Kernel;
 import java.util.Random;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public class CaptchaPainter
 {
 
     private final int width = 128;
     private final int height = 128;
     private final Color background = Color.WHITE;
-    private final Random rnd = new Random();
+    private final Random rnd;
 
     public BufferedImage draw(Font font, Color fGround, String text)
     {

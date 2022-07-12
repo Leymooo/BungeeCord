@@ -7,6 +7,8 @@ import net.md_5.bungee.BungeeCord;
 import ru.leymooo.botfilter.BotFilter.CheckState;
 import ru.leymooo.botfilter.caching.PacketUtils.KickType;
 import ru.leymooo.botfilter.caching.PacketsPosition;
+import ru.leymooo.botfilter.captcha.CaptchaGeneration;
+import ru.leymooo.botfilter.captcha.CaptchaGenerationException;
 import ru.leymooo.botfilter.config.Settings;
 import ru.leymooo.botfilter.utils.FailedUtils;
 import ru.leymooo.botfilter.utils.ManyChecksUtils;
@@ -107,12 +109,13 @@ public class BotFilterThread
     {
         Thread t = new Thread( () ->
         {
-            byte counter = 0;
+            byte counterClean = 0;
+            int counterCaptcha = 0;
             while ( !Thread.interrupted() && sleep( 5 * 1000 ) )
             {
-                if ( ++counter == 12 )
+                if ( ++counterClean == 12 )
                 {
-                    counter = 0;
+                    counterClean = 0;
                     ManyChecksUtils.cleanUP();
                     if ( bungee.getBotFilter() != null )
                     {
@@ -132,6 +135,22 @@ public class BotFilterThread
                     }
                 }
                 FailedUtils.flushQueue();
+                int captchaMin = Settings.IMP.CAPTCHA.CAPTCHA_REGENERATION_TIME;
+                if ( captchaMin <= 0 )
+                {
+                    continue;
+                }
+                if ( ++counterCaptcha == ( 12 * captchaMin ) )
+                {
+                    counterCaptcha = 0;
+
+                    try
+                    {
+                        CaptchaGeneration.generateImages();
+                    } catch ( CaptchaGenerationException ignored )
+                    {
+                    }
+                }
             }
         }, "CleanUp thread" );
         t.setDaemon( true );

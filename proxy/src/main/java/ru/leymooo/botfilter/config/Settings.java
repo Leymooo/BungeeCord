@@ -35,6 +35,8 @@ public class Settings extends Config
     @Create
     public PROTECTION PROTECTION;
     @Create
+    public CAPTCHA CAPTCHA;
+    @Create
     public SQL SQL;
     @Comment(
         {
@@ -249,5 +251,14 @@ public class Settings extends Config
             "2 - Энд"
             })
         public int TYPE = 0;
+    }
+
+    @Comment("Настройка капчи")
+    public static class CAPTCHA
+    {
+        @Comment("Сколько экземпляров капчи нужно сгенерировать. Большое количество может занять много оперативной памяти.")
+        public int COUNT = 900;
+        @Comment("Как часто капча должна сама регенерироваться в минутах. Укажите -1 чтобы отключить.")
+        public int CAPTCHA_REGENERATION_TIME = 360;
     }
 }
