@@ -16,7 +16,7 @@ public class ManyChecksUtils
     private static Cache<InetAddress, Integer> connections = CacheBuilder.newBuilder()
             .concurrencyLevel( Runtime.getRuntime().availableProcessors() )
             .initialCapacity( 100 )
-            .expireAfterWrite( 10, TimeUnit.MINUTES )
+            .expireAfterWrite( Settings.IMP.PROTECTION.BLACKLIST_TIME, TimeUnit.MINUTES )
             .build();
 
     public static void IncreaseOrAdd(InetAddress address)
