@@ -184,7 +184,7 @@ public class Connector extends MoveHandler
         int devide = lastSend == 0 ? sentPings : sentPings - 1;
         if ( botFilter.checkBigPing( totalping / ( devide <= 0 ? 1 : devide ) ) )
         {
-            failed( KickType.PING, "Big ping" );
+            failed( KickType.PING, Settings.IMP.MESSAGES.KICK_BIG_PING );
             return;
         }
         state = CheckState.SUCCESSFULLY;
