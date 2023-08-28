@@ -2,15 +2,13 @@ package ru.leymooo.botfilter.caching;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
-import net.md_5.bungee.api.ChatColor;
-import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolConstants;
 import net.md_5.bungee.protocol.packet.Subtitle;
 import net.md_5.bungee.protocol.packet.Title;
 import net.md_5.bungee.protocol.packet.TitleTimes;
 import ru.leymooo.botfilter.config.Settings;
+import ru.leymooo.botfilter.utils.ColorsUtils;
 
 /**
  * @author Leymooo
@@ -34,7 +32,7 @@ public class CachedTitle
                 this.title = new ByteBuf[PacketUtils.PROTOCOLS_COUNT];
                 Title titlePacket = new Title();
                 titlePacket.setAction( Title.Action.TITLE );
-                titlePacket.setText( ComponentSerializer.toString( TextComponent.fromLegacyText( ChatColor.translateAlternateColorCodes( '&', title ) ) ) );
+                titlePacket.setText( ColorsUtils.serializeTextWithColorToJson( title ) );
                 PacketUtils.fillArray( this.title, titlePacket, Protocol.GAME );
             }
             if ( subtitle != null && !subtitle.isEmpty() )
@@ -42,7 +40,7 @@ public class CachedTitle
                 this.subtitle = new ByteBuf[PacketUtils.PROTOCOLS_COUNT];
                 Title subTitlePacket = new Title();
                 subTitlePacket.setAction( Title.Action.SUBTITLE );
-                subTitlePacket.setText( ComponentSerializer.toString( TextComponent.fromLegacyText( ChatColor.translateAlternateColorCodes( '&', subtitle ) ) ) );
+                subTitlePacket.setText( ColorsUtils.serializeTextWithColorToJson( subtitle ) );
                 PacketUtils.fillArray( this.subtitle, subTitlePacket, ProtocolConstants.MINECRAFT_1_8, ProtocolConstants.MINECRAFT_1_16_4, Protocol.GAME );
                 Subtitle subtitlePacket1 = new Subtitle();
                 subtitlePacket1.setText( subTitlePacket.getText() );
