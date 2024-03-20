@@ -5,6 +5,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import java.util.List;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.Setter;
 import ru.leymooo.botfilter.utils.FastBadPacketException;
 
@@ -12,6 +13,7 @@ import ru.leymooo.botfilter.utils.FastBadPacketException;
 public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
 {
 
+    @Getter
     @Setter
     private Protocol protocol;
     private final boolean server;
@@ -46,7 +48,7 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
         DefinedPacket packet = prot.createPacket( packetId, protocolVersion );
         if ( packet != null )
         {
-            packet.read( in, prot.getDirection(), protocolVersion );
+            packet.read( in, protocol, prot.getDirection(), protocolVersion );
             if ( in.isReadable() )
             {
                 in.skipBytes( in.readableBytes() ); //BotFilter
@@ -58,6 +60,6 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
         }
         //System.out.println( "ID: " + packetId + ( packet == null ? " (null)" : " ("+packet+")" ) );
         ByteBuf copy = in.copy( originalReaderIndex, originalReadableBytes ); //BotFilter
-        out.add( new PacketWrapper( packet, copy ) );
+        out.add( new PacketWrapper( packet, copy, protocol ) );
     }
 }

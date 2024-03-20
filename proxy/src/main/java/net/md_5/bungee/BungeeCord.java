@@ -1,6 +1,5 @@
 package net.md_5.bungee;
 
-import com.google.common.base.Charsets;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
@@ -24,6 +23,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.text.Format;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -58,6 +58,7 @@ import net.md_5.bungee.api.ReconnectHandler;
 import net.md_5.bungee.api.ServerPing;
 import net.md_5.bungee.api.Title;
 import net.md_5.bungee.api.chat.BaseComponent;
+import net.md_5.bungee.api.chat.ComponentStyle;
 import net.md_5.bungee.api.chat.KeybindComponent;
 import net.md_5.bungee.api.chat.ScoreComponent;
 import net.md_5.bungee.api.chat.SelectorComponent;
@@ -70,6 +71,7 @@ import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.plugin.PluginManager;
 import net.md_5.bungee.chat.ComponentSerializer;
+import net.md_5.bungee.chat.ComponentStyleSerializer;
 import net.md_5.bungee.chat.KeybindComponentSerializer;
 import net.md_5.bungee.chat.ScoreComponentSerializer;
 import net.md_5.bungee.chat.SelectorComponentSerializer;
@@ -175,6 +177,7 @@ public class BungeeCord extends ProxyServer
             .registerTypeAdapter( KeybindComponent.class, new KeybindComponentSerializer() )
             .registerTypeAdapter( ScoreComponent.class, new ScoreComponentSerializer() )
             .registerTypeAdapter( SelectorComponent.class, new SelectorComponentSerializer() )
+            .registerTypeAdapter( ComponentStyle.class, new ComponentStyleSerializer() )
             .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer() )
             .registerTypeAdapter( Favicon.class, Favicon.getFaviconTypeAdapter() ).create();
     @Getter
@@ -735,10 +738,10 @@ public class BungeeCord extends ProxyServer
     {
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
         {
-            return new PluginMessage( "minecraft:register", String.join( "\00", Iterables.transform( pluginChannels, PluginMessage.MODERNISE ) ).getBytes( Charsets.UTF_8 ), false );
+            return new PluginMessage( "minecraft:register", String.join( "\00", Iterables.transform( pluginChannels, PluginMessage.MODERNISE ) ).getBytes( StandardCharsets.UTF_8 ), false );
         }
 
-        return new PluginMessage( "REGISTER", String.join( "\00", pluginChannels ).getBytes( Charsets.UTF_8 ), false );
+        return new PluginMessage( "REGISTER", String.join( "\00", pluginChannels ).getBytes( StandardCharsets.UTF_8 ), false );
     }
 
     @Override
@@ -774,13 +777,13 @@ public class BungeeCord extends ProxyServer
     @Override
     public void broadcast(String message)
     {
-        broadcast( TextComponent.fromLegacyText( message ) );
+        broadcast( TextComponent.fromLegacy( message ) );
     }
 
     @Override
     public void broadcast(BaseComponent... message)
     {
-        getConsole().sendMessage( BaseComponent.toLegacyText( message ) );
+        getConsole().sendMessage( message );
         for ( ProxiedPlayer player : getPlayers() )
         {
             player.sendMessage( message );
@@ -790,14 +793,14 @@ public class BungeeCord extends ProxyServer
     @Override
     public void broadcast(BaseComponent message)
     {
-        getConsole().sendMessage( message.toLegacyText() );
+        getConsole().sendMessage( message );
         for ( ProxiedPlayer player : getPlayers() )
         {
             player.sendMessage( message );
         }
     }
 
-    public void addConnection(UserConnection con)
+    public boolean addConnection(UserConnection con)
     {
         UUID offlineId = con.getPendingConnection().getOfflineId();
         if ( offlineId != null && offlineId.version() != 3 )
@@ -807,6 +810,10 @@ public class BungeeCord extends ProxyServer
         connectionLock.writeLock().lock();
         try
         {
+            if ( connections.containsKey( con.getName() ) || connectionsByUUID.containsKey( con.getUniqueId() ) || connectionsByOfflineUUID.containsKey( offlineId ) )
+            {
+                return false;
+            }
             connections.put( con.getName(), con );
             connectionsByUUID.put( con.getUniqueId(), con );
             connectionsByOfflineUUID.put( offlineId, con );
@@ -814,6 +821,7 @@ public class BungeeCord extends ProxyServer
         {
             connectionLock.writeLock().unlock();
         }
+        return true;
     }
 
     public void removeConnection(UserConnection con)

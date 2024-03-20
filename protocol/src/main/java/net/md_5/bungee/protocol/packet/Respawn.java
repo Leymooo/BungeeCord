@@ -27,7 +27,7 @@ public class Respawn extends DefinedPacket
     private String levelType;
     private boolean debug;
     private boolean flat;
-    private boolean copyMeta;
+    private byte copyMeta;
     private Location deathLocation;
     private int portalCooldown;
 
@@ -36,9 +36,12 @@ public class Respawn extends DefinedPacket
     {
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16 )
         {
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16_2 && protocolVersion < ProtocolConstants.MINECRAFT_1_19 )
+            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_20_5 )
             {
-                dimension = readTag( buf );
+                dimension = readVarInt( buf );
+            } else if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16_2 && protocolVersion < ProtocolConstants.MINECRAFT_1_19 )
+            {
+                dimension = readTag( buf, protocolVersion );
             } else
             {
                 dimension = readString( buf );
@@ -62,7 +65,10 @@ public class Respawn extends DefinedPacket
             previousGameMode = buf.readUnsignedByte();
             debug = buf.readBoolean();
             flat = buf.readBoolean();
-            copyMeta = buf.readBoolean();
+            if ( protocolVersion < ProtocolConstants.MINECRAFT_1_20_2 )
+            {
+                copyMeta = buf.readByte();
+            }
         } else
         {
             levelType = readString( buf );
@@ -78,6 +84,10 @@ public class Respawn extends DefinedPacket
         {
             portalCooldown = readVarInt( buf );
         }
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_20_2 )
+        {
+            copyMeta = buf.readByte();
+        }
     }
 
     @Override
@@ -85,9 +95,12 @@ public class Respawn extends DefinedPacket
     {
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16 )
         {
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16_2 && protocolVersion < ProtocolConstants.MINECRAFT_1_19 )
+            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_20_5 )
             {
-                writeTag( (Tag) dimension, buf );
+                writeVarInt( (Integer) dimension, buf );
+            } else if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16_2 && protocolVersion < ProtocolConstants.MINECRAFT_1_19 )
+            {
+                writeTag( (Tag) dimension, buf, protocolVersion );
             } else
             {
                 writeString( (String) dimension, buf );
@@ -111,7 +124,10 @@ public class Respawn extends DefinedPacket
             buf.writeByte( previousGameMode );
             buf.writeBoolean( debug );
             buf.writeBoolean( flat );
-            buf.writeBoolean( copyMeta );
+            if ( protocolVersion < ProtocolConstants.MINECRAFT_1_20_2 )
+            {
+                buf.writeByte( copyMeta );
+            }
         } else
         {
             writeString( levelType, buf );
@@ -131,6 +147,10 @@ public class Respawn extends DefinedPacket
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_20 )
         {
             writeVarInt( portalCooldown, buf );
+        }
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_20_2 )
+        {
+            buf.writeByte( copyMeta );
         }
     }
 

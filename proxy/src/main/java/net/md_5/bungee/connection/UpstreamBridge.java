@@ -9,6 +9,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.UUID;
 import net.md_5.bungee.BungeeCord;
+import net.md_5.bungee.ServerConnection;
 import net.md_5.bungee.ServerConnection.KeepAliveData;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.Util;
@@ -24,15 +25,20 @@ import net.md_5.bungee.forge.ForgeConstants;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.PacketHandler;
 import net.md_5.bungee.protocol.PacketWrapper;
+import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolConstants;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.ClientChat;
 import net.md_5.bungee.protocol.packet.ClientCommand;
 import net.md_5.bungee.protocol.packet.ClientSettings;
+import net.md_5.bungee.protocol.packet.CookieResponse;
+import net.md_5.bungee.protocol.packet.FinishConfiguration;
 import net.md_5.bungee.protocol.packet.KeepAlive;
+import net.md_5.bungee.protocol.packet.LoginAcknowledged;
 import net.md_5.bungee.protocol.packet.PlayerListItem;
 import net.md_5.bungee.protocol.packet.PlayerListItemRemove;
 import net.md_5.bungee.protocol.packet.PluginMessage;
+import net.md_5.bungee.protocol.packet.StartConfiguration;
 import net.md_5.bungee.protocol.packet.TabCompleteRequest;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
 import net.md_5.bungee.util.AllowedCharacters;
@@ -51,10 +57,7 @@ public class UpstreamBridge extends PacketHandler
         this.bungee = bungee;
         this.con = con;
 
-        BungeeCord.getInstance().addConnection( con );
         con.getTabListHandler().onConnect();
-        con.unsafe().sendPacket( BungeeCord.getInstance().registerChannels( con.getPendingConnection().getVersion() ) );
-
         //BotFilter start
         if ( con.isCallSettingsEvent() )
         {
@@ -66,7 +69,6 @@ public class UpstreamBridge extends PacketHandler
         {
             con.setDelayedPluginMessages( clearPluginMessages( con.getDelayedPluginMessages() ) );
         }
-        //BotFilter end
     }
 
     //BotFilter start
@@ -156,20 +158,28 @@ public class UpstreamBridge extends PacketHandler
     @Override
     public boolean shouldHandle(PacketWrapper packet) throws Exception
     {
-        return con.getServer() != null || packet.packet instanceof PluginMessage;
+        return con.getServer() != null || packet.packet instanceof PluginMessage || packet.packet instanceof CookieResponse;
     }
 
     @Override
     public void handle(PacketWrapper packet) throws Exception
     {
-        if ( con.getServer() != null )
+        ServerConnection server = con.getServer();
+        if ( server != null && server.isConnected() )
         {
+            Protocol serverEncode = server.getCh().getEncodeProtocol();
+            // #3527: May still have old packets from client in game state when switching server to configuration state - discard those
+            if ( packet.protocol != serverEncode )
+            {
+                return;
+            }
+
             EntityMap rewrite = con.getEntityRewrite();
-            if ( rewrite != null )
+            if ( rewrite != null && serverEncode == Protocol.GAME )
             {
                 rewrite.rewriteServerbound( packet.buf, con.getClientEntityId(), con.getServerEntityId(), con.getPendingConnection().getVersion() );
             }
-            con.getServer().getCh().write( packet );
+            server.getCh().write( packet );
         }
     }
 
@@ -363,6 +373,45 @@ public class UpstreamBridge extends PacketHandler
         }
 
         con.getPendingConnection().relayMessage( pluginMessage );
+    }
+
+    @Override
+    public void handle(LoginAcknowledged loginAcknowledged) throws Exception
+    {
+        configureServer();
+    }
+
+    @Override
+    public void handle(StartConfiguration startConfiguration) throws Exception
+    {
+        configureServer();
+    }
+
+    private void configureServer()
+    {
+        ChannelWrapper ch = con.getServer().getCh();
+        if ( ch.getDecodeProtocol() == Protocol.LOGIN )
+        {
+            ch.setDecodeProtocol( Protocol.CONFIGURATION );
+            ch.write( new LoginAcknowledged() );
+            ch.setEncodeProtocol( Protocol.CONFIGURATION );
+
+            con.getServer().sendQueuedPackets();
+
+            throw CancelSendSignal.INSTANCE;
+        }
+    }
+
+    @Override
+    public void handle(FinishConfiguration finishConfiguration) throws Exception
+    {
+        con.sendQueuedPackets();
+    }
+
+    @Override
+    public void handle(CookieResponse cookieResponse) throws Exception
+    {
+        con.getPendingConnection().handle( cookieResponse );
     }
 
     @Override

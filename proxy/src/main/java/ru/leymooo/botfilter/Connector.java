@@ -199,7 +199,7 @@ public class Connector extends MoveHandler
             packetDecompressor.checking = false;
         }
         userConnection.setNeedLogin( false );
-        userConnection.getPendingConnection().finishLogin( userConnection, true );
+        userConnection.getPendingConnection().finishLoginWithLoginEvent( userConnection, true );
         markDisconnected = true;
         LOGGER.log( Level.INFO, "[BotFilter] Игрок (" + name + "|" + ip + ") успешно прошёл проверку" );
     }

@@ -1,6 +1,5 @@
 package net.md_5.bungee.conf;
 
-import com.google.common.base.Charsets;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.File;
 import java.io.FileInputStream;
@@ -11,6 +10,7 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -182,7 +182,7 @@ public class YamlConfig implements ConfigurationAdapter
     {
         try
         {
-            try ( Writer wr = new OutputStreamWriter( new FileOutputStream( file ), Charsets.UTF_8 ) )
+            try ( Writer wr = new OutputStreamWriter( new FileOutputStream( file ), StandardCharsets.UTF_8 ) )
             {
                 yaml.dump( config, wr );
             }
