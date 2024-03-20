@@ -11,14 +11,14 @@ import net.md_5.bungee.protocol.DefinedPacket;
 public class PacketCompressor extends MessageToByteEncoder<ByteBuf>
 {
 
-    private BungeeZlib zlib;
+    private BungeeZlib zlib; //BotFilter - late init
     @Setter
     private int threshold = 256;
 
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception
     {
-        zlib = CompressFactory.zlib.newInstance();
+        zlib = CompressFactory.zlib.newInstance(); //BotFilter
         zlib.init( true, Deflater.DEFAULT_COMPRESSION );
     }
 

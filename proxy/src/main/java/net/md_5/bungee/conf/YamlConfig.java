@@ -225,6 +225,7 @@ public class YamlConfig implements ConfigurationAdapter
             String motd = ChatColor.translateAlternateColorCodes( '&', get( "motd", "&1Just another BungeeCord - Forced Host", val ) );
             boolean restricted = get( "restricted", false, val );
             SocketAddress address = Util.getAddr( addr );
+            //BotFilter start
             Matcher matcher = YamlConfig.RANGE_MATCH.matcher( name );
             if ( matcher.find() )
             {
@@ -246,7 +247,7 @@ public class YamlConfig implements ConfigurationAdapter
                 int port = ( (InetSocketAddress) address ).getPort();
                 for ( int i = lower; i <= upper; ++i )
                 {
-                    InetSocketAddress next = new InetSocketAddress( ( (InetSocketAddress) address ).getHostName(), port ); //todo, check how unix socket works
+                    InetSocketAddress next = new InetSocketAddress( ( (InetSocketAddress) address ).getHostString(), port ); //todo, check how unix socket works
                     ServerInfo info = BungeeCord.getInstance().constructServerInfo( name + i, next, motd, false );
                     ret.put( info.getName(), info );
                     port++;
@@ -256,6 +257,7 @@ public class YamlConfig implements ConfigurationAdapter
                 ServerInfo info = ProxyServer.getInstance().constructServerInfo( name, address, motd, restricted );
                 ret.put( name, info );
             }
+            //BotFilter end
         }
 
         return ret;
@@ -319,9 +321,9 @@ public class YamlConfig implements ConfigurationAdapter
             // Add defaults if required
             if ( serverPriority.isEmpty() )
             {
-                serverPriority.add( "lobby-1" );
-                serverPriority.add( "lobby-2" );
-                serverPriority.add( "lobby-3" );
+                serverPriority.add( "lobby-1" ); //BotFilter
+                serverPriority.add( "lobby-2" ); //BotFilter
+                serverPriority.add( "lobby-3" ); //BotFilter
             }
             set( "priorities", serverPriority, val );
 

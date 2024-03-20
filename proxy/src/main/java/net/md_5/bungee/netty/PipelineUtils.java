@@ -32,8 +32,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
-import lombok.val;
 import net.md_5.bungee.BungeeCord;
+import net.md_5.bungee.ConnectionThrottle;
 import net.md_5.bungee.Util;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.config.ListenerInfo;
@@ -60,8 +60,8 @@ public class PipelineUtils
         {
             SocketAddress remoteAddress = ( ch.remoteAddress() == null ) ? ch.parent().localAddress() : ch.remoteAddress();
 
-            val instance = BungeeCord.getInstance();
-            val throttle = instance.getConnectionThrottle();
+            BungeeCord instance = BungeeCord.getInstance();
+            ConnectionThrottle throttle = instance.getConnectionThrottle();
             if ( throttle != null && throttle.throttle( remoteAddress ) )
             {
                 ch.close();

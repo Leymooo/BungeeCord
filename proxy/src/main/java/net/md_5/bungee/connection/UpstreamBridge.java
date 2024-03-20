@@ -1,5 +1,6 @@
 package net.md_5.bungee.connection;
 
+import io.netty.channel.Channel;
 import com.google.common.base.Preconditions;
 import com.mojang.brigadier.context.StringRange;
 import com.mojang.brigadier.suggestion.Suggestion;
@@ -151,7 +152,14 @@ public class UpstreamBridge extends PacketHandler
     {
         if ( con.getServer() != null )
         {
-            con.getServer().getCh().getHandle().config().setAutoRead( channel.getHandle().isWritable() );
+            Channel server = con.getServer().getCh().getHandle();
+            if ( channel.getHandle().isWritable() )
+            {
+                server.config().setAutoRead( true );
+            } else
+            {
+                server.config().setAutoRead( false );
+            }
         }
     }
 

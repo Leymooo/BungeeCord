@@ -62,6 +62,7 @@ public class ChannelWrapper
         setDecodeProtocol( protocol );
         setEncodeProtocol( protocol );
     }
+
     public void setVersion(int protocol)
     {
         ch.pipeline().get( MinecraftDecoder.class ).setProtocolVersion( protocol );
@@ -104,13 +105,20 @@ public class ChannelWrapper
         }
     }
 
-    //TODO BF: nextProtocol??
     public void write(PacketWrapper packet)
     {
         if ( !closed )
         {
             packet.setReleased( true );
             ch.writeAndFlush( packet.buf, ch.voidPromise() );
+            if ( packet.packet != null )
+            {
+                Protocol nextProtocol = packet.packet.nextProtocol();
+                if ( nextProtocol != null )
+                {
+                    setEncodeProtocol( nextProtocol );
+                }
+            }
         }
     }
 

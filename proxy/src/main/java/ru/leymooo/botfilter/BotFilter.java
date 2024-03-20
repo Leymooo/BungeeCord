@@ -168,8 +168,8 @@ public class BotFilter
 
     public void connectToBotFilter(UserConnection userConnection)
     {
-        userConnection.getCh().setEncoderProtocol( Protocol.GAME );
-        userConnection.getCh().setDecoderProtocol( Protocol.BotFilter );
+        userConnection.getCh().setEncodeProtocol( Protocol.GAME );
+        userConnection.getCh().setDecodeProtocol( Protocol.BotFilter );
         Connector connector = new Connector( userConnection, this );
 
         if ( !addConnection( connector ) )

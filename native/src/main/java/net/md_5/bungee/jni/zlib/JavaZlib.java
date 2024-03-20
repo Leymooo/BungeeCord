@@ -74,9 +74,11 @@ public class JavaZlib implements BungeeZlib
         }
     }
 
+    //BotFilter start
     @Override
     public void process(ByteBuf in, ByteBuf out, boolean preallocatedBuffer) throws DataFormatException
     {
         process( in, out );
     }
+    //BotFilter end
 }

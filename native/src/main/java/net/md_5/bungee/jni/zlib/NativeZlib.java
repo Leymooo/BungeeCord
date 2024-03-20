@@ -53,10 +53,10 @@ public class NativeZlib implements BungeeZlib
         while ( !nativeCompress.finished && ( compress || in.isReadable() ) )
         {
 
-            if ( !preallocatedBuffer ) //BotFilter
+            if ( !preallocatedBuffer ) //BotFilter start
             {
                 out.ensureWritable( 8192 );
-            } //BotFilter
+            } //BotFilter end
 
             int processed = nativeCompress.process( ctx, in.memoryAddress() + in.readerIndex(), in.readableBytes(), out.memoryAddress() + out.writerIndex(), out.writableBytes(), compress );
 

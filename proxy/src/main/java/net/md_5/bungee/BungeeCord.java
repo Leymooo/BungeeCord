@@ -192,6 +192,7 @@ public class BungeeCord extends ProxyServer
     private BotFilter botFilter; //BotFilter
 
     {
+        // TODO: Proper fallback when we interface the manager
         registerChannel( "BungeeCord" );
     }
 
@@ -286,17 +287,18 @@ public class BungeeCord extends ProxyServer
             ResourceLeakDetector.setLevel( ResourceLeakDetector.Level.DISABLED ); // Eats performance
         }
 
-        String nameProperty = System.getProperty( "bungeeName" ); // BotFilter
-        customBungeeName = ( nameProperty == null ? getName() : nameProperty ) + " " + getGameVersion(); // BotFilter
+        // BotFilter start
+        String nameProperty = System.getProperty( "bungeeName" );
+        customBungeeName = ( nameProperty == null ? getName() : nameProperty ) + " " + getGameVersion();
 
         this.botFilter = new BotFilter( true ); //Hook BotFilter into Bungee
         new FakeOnlineUtils(); //Init fake online
-        BotFilterThread.startCleanUpThread(); //BotFilter
+        BotFilterThread.startCleanUpThread();
 
         bossEventLoopGroup = PipelineUtils.newEventLoopGroup( 0, new ThreadFactoryBuilder().setNameFormat( "Netty Boss IO Thread #%1$d" ).build() ); //BotFilter //WaterFall backport
         eventLoops = workerEventLoopGroup = PipelineUtils.newEventLoopGroup( 0, new ThreadFactoryBuilder().setNameFormat( "Netty Worker IO Thread #%1$d" ).build() ); //BotFilter //WaterFall backport
         queryEventLoopGroup = PipelineUtils.newEventLoopGroup( 1, new ThreadFactoryBuilder().setNameFormat( "Query Netty IO Thread #%1$d" ).build() ); //BotFilter
-
+        // BotFilter end
         File moduleDirectory = new File( "modules" );
         moduleManager.load( this, moduleDirectory );
         pluginManager.detectPlugins( moduleDirectory );
@@ -337,6 +339,7 @@ public class BungeeCord extends ProxyServer
                 }
             }
         }, 0, TimeUnit.MINUTES.toMillis( 5 ) );
+        // metricsThread.scheduleAtFixedRate( new Metrics(), 0, TimeUnit.MINUTES.toMillis( Metrics.PING_INTERVAL ) ); //BotFilter
 
         Runtime.getRuntime().addShutdownHook( new Thread()
         {
@@ -520,9 +523,9 @@ public class BungeeCord extends ProxyServer
         while ( true ) //BotFilter //WaterFall backport {
             try
             {
-                bossEventLoopGroup.awaitTermination( Long.MAX_VALUE, TimeUnit.NANOSECONDS ); //BotFilter //WaterFall backport
-                workerEventLoopGroup.awaitTermination( Long.MAX_VALUE, TimeUnit.NANOSECONDS ); //BotFilter //WaterFall backport
-                queryEventLoopGroup.awaitTermination( Long.MAX_VALUE, TimeUnit.NANOSECONDS ); //BotFilter
+                bossEventLoopGroup.awaitTermination( 10, TimeUnit.SECONDS ); //BotFilter //WaterFall backport
+                workerEventLoopGroup.awaitTermination( 10, TimeUnit.SECONDS ); //BotFilter //WaterFall backport
+                queryEventLoopGroup.awaitTermination( 10, TimeUnit.SECONDS ); //BotFilter
                 break;
             } catch ( InterruptedException ignored )
             {

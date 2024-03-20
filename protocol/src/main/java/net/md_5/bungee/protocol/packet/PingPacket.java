@@ -7,7 +7,6 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.ProtocolConstants.Direction;
 
 @Data
 @NoArgsConstructor
@@ -19,9 +18,8 @@ public class PingPacket extends DefinedPacket
     private long time;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, int protocolVersion)
+    public void read(ByteBuf buf)
     {
-        DefinedPacket.doLengthSanityChecks( buf, this, direction, protocolVersion, 8, 8 ); //BotFilter
         time = buf.readLong();
     }
 

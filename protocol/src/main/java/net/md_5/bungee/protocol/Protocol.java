@@ -1112,21 +1112,6 @@ public enum Protocol
             return ( constructor == null ) ? null : constructor.get();
         }
 
-        private void registerPacket(Class<? extends DefinedPacket> packetClass, ProtocolMapping... mappings) //BotFilter
-        {
-            registerPacket( packetClass, () ->
-            {
-                try
-                {
-                    return packetClass.newInstance();
-                } catch ( Throwable e )
-                {
-                    throw new RuntimeException( e );
-                }
-            }, mappings ); //BotFilter
-        }
-
-
         private void registerPacket(Class<? extends DefinedPacket> packetClass, Supplier<? extends DefinedPacket> constructor, ProtocolMapping... mappings)
         {
             int mappingIndex = 0;

@@ -26,8 +26,8 @@ import se.llbit.nbt.SpecificTag;
 import se.llbit.nbt.StringTag;
 import se.llbit.nbt.Tag;
 
-//Автор: CatCoder, https://vk.com/catcoder
-//Изменил: BoomEaro
+//Author: CatCoder, https://vk.com/catcoder
+//Updated by: BoomEaro
 @RequiredArgsConstructor
 @Getter
 public class Dimension

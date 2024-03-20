@@ -379,8 +379,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                 bungee.getBotFilter().getServerPingUtils().add( getAddress().getAddress() ); //BotFilter
                 break;
             case 2:
-                //botfilter
-                ch.getHandle().pipeline().get( Varint21FrameDecoder.class ).set119( handshake.getProtocolVersion() >= ProtocolConstants.MINECRAFT_1_19 );
             case 3:
                 transferred = handshake.getRequestedProtocol() == 3;
                 // Login
@@ -460,7 +458,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection
             }
         }
 
-
         int limit = BungeeCord.getInstance().config.getPlayerLimit();
         if ( limit > 0 && bungee.getOnlineCountBF( false ) >= limit )//BotFilter
         {
@@ -496,12 +493,14 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                 {
                     thisState = State.ENCRYPT;
                     unsafe().sendPacket( request = EncryptionUtil.encryptRequest() );
+                //BotFilter start
                 } else if ( isInEventLoop() )
                 {
                     thisState = State.FINISHING;
                     finish();
                 } else
                 {
+                    thisState = State.FINISHING;
                     ch.getHandle().eventLoop().execute( () ->
                     {
                         if ( !ch.isClosing() )
@@ -510,12 +509,12 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                         }
                     } );
                 }
+                //BotFilter end
             }
         };
 
         // fire pre login event
         bungee.getPluginManager().callEvent( new PreLoginEvent( InitialHandler.this, callback ) );
-
     }
 
     @Override
@@ -584,8 +583,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection
             uniqueId = uuidEvent.getUniqueId();
         }
 
-        //TODO: MERGE: Should it be here or lower??
-
         if ( uniqueId == null )
         {
             uniqueId = offlineId;
@@ -649,29 +646,33 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         }
 
 
-        boolean sendLoginSuccess = uuidEvent.getUniqueId() != null;
-
 
         UserConnection userCon = new UserConnection( bungee, ch, getName(), InitialHandler.this );
         userCon.setCompressionThreshold( BungeeCord.getInstance().config.getCompressionThreshold() );
-        //userCon.init();
 
-        sendLoginSuccess( sendLoginSuccess );
+        boolean isLoginSuccessSent = false;
+        boolean needCheck = bungee.getBotFilter().needCheck( this );
+        //Force send login success, if set in PlayerSetUUIDEvent
+        if (uuidEvent.getUniqueId() != null || needCheck) {
+            //TODO: sending login success should be a little different for 1.20.2+ clients. Need to check it
+            sendLoginSuccess();
+            isLoginSuccessSent = true;
+        }
+
 
         if ( bungee.getBotFilter().needCheck( this ) )
         {
-            sendLoginSuccess( !sendLoginSuccess ); //Send a loginSuccess if sendLoginSuccess is false
             bungee.getBotFilter().connectToBotFilter( userCon );
         } else
         {
             bungee.getBotFilter().saveUser( userCon.getName().toLowerCase(), IPUtils.getAddress( userCon ), false ); //update timestamp
-            finishLoginWithLoginEvent( sendLoginSuccess ); //if true, dont send again login success
+            finishLoginWithLoginEvent( isLoginSuccessSent ); //if true, dont send again login success
         }
 
         //BotFilter: LoginEvent posting moved to finishLoginWithLoginEvent method
     }
 
-    public void finishLoginWithLoginEvent(boolean ignoreLoginSuccess)
+    public void finishLoginWithLoginEvent(boolean isLoginSuccessSent)
     {
         Callback<LoginEvent> complete = (result, error) ->
         {
@@ -689,14 +690,14 @@ public class InitialHandler extends PacketHandler implements PendingConnection
             //BotFilter: Some code moved to finnalyFinishLogin
             if ( isInEventLoop() )
             {
-                finnalyFinishLogin( ignoreLoginSuccess );
+                finnalyFinishLogin( isLoginSuccessSent );
             } else
             {
                 ch.getHandle().eventLoop().execute( () ->
                 {
                     if ( !ch.isClosing() )
                     {
-                        finnalyFinishLogin( ignoreLoginSuccess );
+                        finnalyFinishLogin( isLoginSuccessSent );
                     }
                 } );
             }
@@ -705,11 +706,14 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         bungee.getPluginManager().callEvent( new LoginEvent( InitialHandler.this, complete ) );
     }
 
-    private void finnalyFinishLogin(boolean ignoreLoginSuccess)
+    private void finnalyFinishLogin(boolean isLoginSuccessSent)
     {
         if ( getVersion() < ProtocolConstants.MINECRAFT_1_20_2 )
         {
-            sendLoginSuccess( !ignoreLoginSuccess );
+            if (!isLoginSuccessSent)
+            {
+                sendLoginSuccess();
+            }
             ch.setProtocol( Protocol.GAME );
         }
 
@@ -747,13 +751,9 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         userCon.connect( server, null, true, ServerConnectEvent.Reason.JOIN_PROXY );
     }
 
-    private void sendLoginSuccess(boolean send)
+    private void sendLoginSuccess()
     {
-        if ( send )
-        {
-            LoginSuccess packet = new LoginSuccess( getUniqueId(), getName(), ( loginProfile == null ) ? null : loginProfile.getProperties() );
-            unsafe.sendPacket( packet );
-        }
+        unsafe.sendPacket( new LoginSuccess( getUniqueId(), getName(), ( loginProfile == null ) ? null : loginProfile.getProperties() ) );
     }
 
     private boolean isInEventLoop()
@@ -910,13 +910,14 @@ public class InitialHandler extends PacketHandler implements PendingConnection
             throw new FastException( errorMessage );
         }
     }
+    //BotFilter end
 
     public void relayMessage(PluginMessage input) throws Exception
     {
-        relayMessage0( input );
+        relayMessage0( input ); //BotFilter
     }
 
-    public boolean relayMessage0(PluginMessage input) throws Exception
+    public boolean relayMessage0(PluginMessage input) throws Exception //BotFilter -> boolean
     {
         if ( input.getTag().equals( "REGISTER" ) || input.getTag().equals( "minecraft:register" ) )
         {
@@ -929,7 +930,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
 
                 registeredChannels.add( id );
             }
-            return true;
+            return true; //BotFilter
         } else if ( input.getTag().equals( "UNREGISTER" ) || input.getTag().equals( "minecraft:unregister" ) )
         {
             String content = new String( input.getData(), StandardCharsets.UTF_8 );
@@ -938,13 +939,13 @@ public class InitialHandler extends PacketHandler implements PendingConnection
             {
                 registeredChannels.remove( id );
             }
-            return true;
+            return true; //BotFilter
         } else if ( input.getTag().equals( "MC|Brand" ) || input.getTag().equals( "minecraft:brand" ) )
         {
             brandMessage = input;
-            return true;
+            return true; //BotFilter
         }
-        return false;
+        return false; //BotFilter
     }
 
     @Override

@@ -107,7 +107,7 @@ public class ServerConnector extends PacketHandler
     {
         this.ch = channel;
 
-        channel.getHandle().pipeline().get( Varint21FrameDecoder.class ).setFromBackend( true );
+        channel.getHandle().pipeline().get( Varint21FrameDecoder.class ).setFromBackend( true ); //BotFilter
 
         this.handshakeHandler = new ForgeServerHandler( user, ch, target );
         Handshake originalHandshake = user.getPendingConnection().getHandshake();
@@ -273,12 +273,15 @@ public class ServerConnector extends PacketHandler
                 user.getSentBossBars().clear();
 
                 user.unsafe().sendPacket( new Respawn( login.getDimension(), login.getWorldName(), login.getSeed(), login.getDifficulty(), login.getGameMode(), login.getPreviousGameMode(), login.getLevelType(), login.isDebug(), login.isFlat(), (byte) 0, login.getDeathLocation(),
-                    login.getPortalCooldown() ) );
-            } else {
+                        login.getPortalCooldown() ) );
+            } else
+            {
                 user.unsafe().sendPacket( BungeeCord.getInstance().registerChannels( user.getPendingConnection().getVersion() ) );
+
                 ByteBuf brand = ByteBufAllocator.DEFAULT.heapBuffer();
                 DefinedPacket.writeString( "BotFilter (https://vk.cc/8hr1pU)", brand );
                 user.unsafe().sendPacket( new PluginMessage( user.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_13 ? "minecraft:brand" : "MC|Brand", DefinedPacket.toArray( brand ), handshakeHandler != null && handshakeHandler.isServerForge() ) );
+                brand.release();
             }
             user.setNeedLogin( false );
             user.setDimension( login.getDimension() );

@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import lombok.RequiredArgsConstructor;
-import ru.leymooo.botfilter.utils.FastBadPacketException;
 import ru.leymooo.botfilter.utils.FastException;
 import ru.leymooo.botfilter.utils.FastOverflowPacketException;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -34,7 +33,6 @@ public abstract class DefinedPacket
 {
 
     private static final FastException VARINT_TOO_BIG = new FastException( "varint too big" ); //BotFilter
-    private static final FastException ILLEGAL_BUF = new FastException( "Buffer is no longer readable" ); //BotFilter
     public <T> T readNullable(Function<ByteBuf, T> reader, ByteBuf buf)
     {
         return buf.readBoolean() ? reader.apply( buf ) : null;
@@ -244,15 +242,8 @@ public abstract class DefinedPacket
         int out = 0;
         int bytes = 0;
         byte in;
-        // int readable = input.readableBytes(); //BotFilter
         while ( true )
         {
-            // BotFilter start
-            // if ( readable-- == 0 )
-            // {
-            //      throw ILLEGAL_BUF;
-            //   }
-            //BotFiter end
             in = input.readByte();
 
             out |= ( in & 0x7F ) << ( bytes++ * 7 );
@@ -479,30 +470,6 @@ public abstract class DefinedPacket
         }
     }
 
-    //BotFilter start - see https://github.com/PaperMC/Waterfall/blob/master/BungeeCord-Patches/0057-Additional-DoS-mitigations.patch
-    public static void doLengthSanityChecks(ByteBuf buf, DefinedPacket packet,
-                                      ProtocolConstants.Direction direction, int protocolVersion, int expectedMinLen, int expectedMaxLen)
-    {
-        //Temporary disable for 1.19
-        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_19 )
-        {
-            return;
-        }
-        int readable = buf.readableBytes();
-        if ( readable > expectedMaxLen )
-        {
-            throw new FastBadPacketException( "Packet " + packet.getClass()
-                                    + " Protocol " + protocolVersion + " was too big (expected "
-                                    + expectedMaxLen + " bytes, got " + readable + " bytes)" );
-        }
-        if ( readable < expectedMinLen )
-        {
-            throw new FastBadPacketException( "Packet " + packet.getClass()
-                                    + " Protocol " + protocolVersion + " was too small (expected "
-                                    + expectedMinLen + " bytes, got " + readable + " bytes)" );
-        }
-    }
-    //BotFilter end
     public static <E extends Enum<E>> void writeEnumSet(EnumSet<E> enumset, Class<E> oclass, ByteBuf buf)
     {
         E[] enums = oclass.getEnumConstants();

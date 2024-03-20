@@ -22,7 +22,6 @@ public class EncryptionResponse extends DefinedPacket
 
     public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
     {
-        DefinedPacket.doLengthSanityChecks( buf, this, direction, protocolVersion, 260, 260 ); //BotFilter
         sharedSecret = readArray( buf, 128 );
         if ( protocolVersion < ProtocolConstants.MINECRAFT_1_19 || protocolVersion >= ProtocolConstants.MINECRAFT_1_19_3 || buf.readBoolean() )
         {

@@ -35,7 +35,7 @@ public class PacketDecompressor extends MessageToMessageDecoder<ByteBuf>
     @Override
     public void handlerAdded(ChannelHandlerContext ctx) throws Exception
     {
-        zlib = CompressFactory.zlib.newInstance();
+        zlib = CompressFactory.zlib.newInstance(); //BotFilter
         zlib.init( false, 0 );
     }
 

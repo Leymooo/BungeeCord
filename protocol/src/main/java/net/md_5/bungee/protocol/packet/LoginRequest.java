@@ -10,7 +10,6 @@ import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.PlayerPublicKey;
 import net.md_5.bungee.protocol.ProtocolConstants;
-import net.md_5.bungee.protocol.ProtocolConstants.Direction;
 
 @Data
 @NoArgsConstructor
@@ -19,18 +18,14 @@ import net.md_5.bungee.protocol.ProtocolConstants.Direction;
 public class LoginRequest extends DefinedPacket
 {
 
-    public static final int EXPECTED_MAX_LENGTH = 1 + ( 32 * 4 ); //BotFilter
-
     private String data;
     private PlayerPublicKey publicKey;
     private UUID uuid;
 
     @Override
-    public void read(ByteBuf buf, Direction direction, int protocolVersion)
+    public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
     {
-        DefinedPacket.doLengthSanityChecks( buf, this, direction, protocolVersion, 0, EXPECTED_MAX_LENGTH ); //BotFilter
-        data = readString( buf, 32 ); //BotFilter read 32 characters instead of 15
-
+        data = readString( buf, 32 ); //BotFilter read 32 characters instead of 16
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_19 && protocolVersion < ProtocolConstants.MINECRAFT_1_19_3 )
         {
             publicKey = readPublicKey( buf );
