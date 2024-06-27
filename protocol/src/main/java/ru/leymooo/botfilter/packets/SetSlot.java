@@ -71,7 +71,7 @@ public class SetSlot extends DefinedPacket
             {
                 CompoundTag nbt = new CompoundTag();
                 nbt.add( "map", new IntTag( 0 ) );
-                DefinedPacket.writeTag( new NamedTag( "", nbt ), buf );
+                DefinedPacket.writeTag( new NamedTag( "", nbt ), buf, version );
             }
 
         }

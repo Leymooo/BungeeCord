@@ -73,7 +73,7 @@ public class JoinGame extends DefinedPacket
                 writeString( world, buf );
             }
 
-            writeTag( dimension.getFullCodec( protocolVersion ), buf );
+            writeTag( dimension.getFullCodec( protocolVersion ), buf, protocolVersion );
         }
 
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16 )
@@ -83,7 +83,7 @@ public class JoinGame extends DefinedPacket
                 writeString( worldName, buf );
             } else
             {
-                writeTag( dimension.getAttributes( protocolVersion ), buf );
+                writeTag( dimension.getAttributes( protocolVersion ), buf, protocolVersion );
             }
             writeString( worldName, buf );
         } else if ( protocolVersion > ProtocolConstants.MINECRAFT_1_9 )

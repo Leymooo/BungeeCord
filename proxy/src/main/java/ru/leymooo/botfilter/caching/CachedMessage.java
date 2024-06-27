@@ -4,6 +4,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
+import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.protocol.DefinedPacket;
@@ -33,15 +34,16 @@ public class CachedMessage
 
     private static DefinedPacket createMessagePacket(String message, boolean is119)
     {
-        message = ComponentSerializer.toString(
-            TextComponent.fromLegacyText(
+        BaseComponent baseComponent =
+            TextComponent.fromLegacy(
                 ChatColor.translateAlternateColorCodes( '&',
-                    message.replace( "%prefix%", Settings.IMP.MESSAGES.PREFIX ).replace( "%nl%", "\n" ) ) ) );
+                    message.replace( "%prefix%", Settings.IMP.MESSAGES.PREFIX ).replace( "%nl%", "\n" ) ) );
+        message = ComponentSerializer.toString( baseComponent );
 
 
         if ( is119 )
         {
-            return new SystemChat( message, ChatMessageType.SYSTEM.ordinal() );
+            return new SystemChat( baseComponent, ChatMessageType.SYSTEM.ordinal() );
         } else
         {
             return new Chat( message, (byte) ChatMessageType.CHAT.ordinal() );

@@ -179,10 +179,10 @@ public class PacketUtils
 
     private static DefinedPacket createKickPacket(String message)
     {
-        return new Kick( ComponentSerializer.toString(
-            TextComponent.fromLegacyText(
+        return new Kick(
+            TextComponent.fromLegacy(
                 ChatColor.translateAlternateColorCodes( '&',
-                    message.replace( "%prefix%", Settings.IMP.MESSAGES.PREFIX ).replace( "%nl%", "\n" ) ) ) ) );
+                    message.replace( "%prefix%", Settings.IMP.MESSAGES.PREFIX ).replace( "%nl%", "\n" ) ) ) );
     }
 
 

@@ -34,7 +34,7 @@ public class CachedTitle
                 this.title = new ByteBuf[PacketUtils.PROTOCOLS_COUNT];
                 Title titlePacket = new Title();
                 titlePacket.setAction( Title.Action.TITLE );
-                titlePacket.setText( ComponentSerializer.toString( TextComponent.fromLegacyText( ChatColor.translateAlternateColorCodes( '&', title ) ) ) );
+                titlePacket.setText( TextComponent.fromLegacy( ChatColor.translateAlternateColorCodes( '&', title ) ) );
                 PacketUtils.fillArray( this.title, titlePacket, Protocol.GAME );
             }
             if ( subtitle != null && !subtitle.isEmpty() )
@@ -42,7 +42,7 @@ public class CachedTitle
                 this.subtitle = new ByteBuf[PacketUtils.PROTOCOLS_COUNT];
                 Title subTitlePacket = new Title();
                 subTitlePacket.setAction( Title.Action.SUBTITLE );
-                subTitlePacket.setText( ComponentSerializer.toString( TextComponent.fromLegacyText( ChatColor.translateAlternateColorCodes( '&', subtitle ) ) ) );
+                subTitlePacket.setText( TextComponent.fromLegacy( ChatColor.translateAlternateColorCodes( '&', subtitle ) ) );
                 PacketUtils.fillArray( this.subtitle, subTitlePacket, ProtocolConstants.MINECRAFT_1_8, ProtocolConstants.MINECRAFT_1_16_4, Protocol.GAME );
                 Subtitle subtitlePacket1 = new Subtitle();
                 subtitlePacket1.setText( subTitlePacket.getText() );
