@@ -42,6 +42,7 @@ import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.protocol.packet.StartConfiguration;
 import net.md_5.bungee.protocol.packet.TabCompleteRequest;
 import net.md_5.bungee.protocol.packet.TabCompleteResponse;
+import net.md_5.bungee.protocol.packet.UnsignedClientCommand;
 import net.md_5.bungee.util.AllowedCharacters;
 
 public class UpstreamBridge extends PacketHandler
@@ -121,7 +122,7 @@ public class UpstreamBridge extends PacketHandler
             PlayerListItem oldPacket = new PlayerListItem();
             oldPacket.setAction( PlayerListItem.Action.REMOVE_PLAYER );
             PlayerListItem.Item item = new PlayerListItem.Item();
-            item.setUuid( con.getUniqueId() );
+            item.setUuid( con.getRewriteId() );
             oldPacket.setItems( new PlayerListItem.Item[]
             {
                 item
@@ -130,7 +131,7 @@ public class UpstreamBridge extends PacketHandler
             PlayerListItemRemove newPacket = new PlayerListItemRemove();
             newPacket.setUuids( new UUID[]
             {
-                con.getUniqueId()
+                con.getRewriteId()
             } );
 
             for ( ProxiedPlayer player : con.getServer().getInfo().getPlayers() )
@@ -235,6 +236,12 @@ public class UpstreamBridge extends PacketHandler
 
     @Override
     public void handle(ClientCommand command) throws Exception
+    {
+        handleChat( "/" + command.getCommand() );
+    }
+
+    @Override
+    public void handle(UnsignedClientCommand command) throws Exception
     {
         handleChat( "/" + command.getCommand() );
     }

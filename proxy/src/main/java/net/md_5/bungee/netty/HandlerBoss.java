@@ -28,10 +28,12 @@ import net.md_5.bungee.util.QuietException;
 public class HandlerBoss extends ChannelInboundHandlerAdapter
 {
 
-    private static final boolean printAllStacktraces = Boolean.getBoolean( "botfilter.printallerrors" );
+    private static final boolean printAllStacktraces = Boolean.getBoolean( "botfilter.printallerrors" ); //BotFilter
 
     private ChannelWrapper channel;
     private PacketHandler handler;
+    private boolean healthCheck;
+
     public void setHandler(PacketHandler handler)
     {
         Preconditions.checkArgument( handler != null, "handler" );
@@ -99,6 +101,9 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
                     } );
 
                     channel.setRemoteAddress( newAddress );
+                } else
+                {
+                    healthCheck = true;
                 }
             } finally
             {
@@ -151,11 +156,13 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
     {
         if ( ctx.channel().isActive() )
         {
+            //BotFilter
             if ( printAllStacktraces )
             {
                 ProxyServer.getInstance().getLogger().log( Level.WARNING, "Exception in handler " + handler.toString(), cause );
             }
-            boolean logExceptions = !( handler instanceof PingHandler );
+            //BotFilter end
+            boolean logExceptions = !( handler instanceof PingHandler ) && !healthCheck;
 
             if ( logExceptions )
             {

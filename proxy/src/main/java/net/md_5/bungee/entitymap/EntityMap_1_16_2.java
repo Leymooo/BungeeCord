@@ -22,7 +22,7 @@ class EntityMap_1_16_2 extends EntityMap
     static final EntityMap_1_16_2 INSTANCE_1_19_4 = new EntityMap_1_16_2( 0x03, 0x30 );
     static final EntityMap_1_16_2 INSTANCE_1_20_2 = new EntityMap_1_16_2( -1, 0x33 );
     static final EntityMap_1_16_2 INSTANCE_1_20_3 = new EntityMap_1_16_2( -1, 0x34 );
-    static final EntityMap_1_16_2 INSTANCE_1_20_5 = new EntityMap_1_16_2( -1, 0x36 );
+    static final EntityMap_1_16_2 INSTANCE_1_20_5 = new EntityMap_1_16_2( -1, 0x37 );
     //
     private final int spawnPlayerId;
     private final int spectateId;
@@ -41,13 +41,13 @@ class EntityMap_1_16_2 extends EntityMap
             DefinedPacket.readVarInt( packet ); // Entity ID
             int idLength = packet.readerIndex() - readerIndex - packetIdLength;
             UUID uuid = DefinedPacket.readUUID( packet );
-            ProxiedPlayer player;
+            UserConnection player;
             if ( ( player = BungeeCord.getInstance().getPlayerByOfflineUUID( uuid ) ) != null )
             {
                 int previous = packet.writerIndex();
                 packet.readerIndex( readerIndex );
                 packet.writerIndex( readerIndex + packetIdLength + idLength );
-                DefinedPacket.writeUUID( player.getUniqueId(), packet );
+                DefinedPacket.writeUUID( player.getRewriteId(), packet );
                 packet.writerIndex( previous );
             }
         }
@@ -62,7 +62,7 @@ class EntityMap_1_16_2 extends EntityMap
         int packetId = DefinedPacket.readVarInt( packet );
         int packetIdLength = packet.readerIndex() - readerIndex;
 
-        if ( packetId == spectateId && !BungeeCord.getInstance().getConfig().isIpForward() )
+        if ( packetId == spectateId )
         {
             UUID uuid = DefinedPacket.readUUID( packet );
             ProxiedPlayer player;
@@ -71,7 +71,7 @@ class EntityMap_1_16_2 extends EntityMap
                 int previous = packet.writerIndex();
                 packet.readerIndex( readerIndex );
                 packet.writerIndex( readerIndex + packetIdLength );
-                DefinedPacket.writeUUID( ( (UserConnection) player ).getPendingConnection().getOfflineId(), packet );
+                DefinedPacket.writeUUID( ( (UserConnection) player ).getRewriteId(), packet );
                 packet.writerIndex( previous );
             }
         }

@@ -10,6 +10,7 @@ import net.md_5.bungee.protocol.packet.ClientStatus;
 import net.md_5.bungee.protocol.packet.Commands;
 import net.md_5.bungee.protocol.packet.CookieRequest;
 import net.md_5.bungee.protocol.packet.CookieResponse;
+import net.md_5.bungee.protocol.packet.DisconnectReportDetails;
 import net.md_5.bungee.protocol.packet.EncryptionRequest;
 import net.md_5.bungee.protocol.packet.EncryptionResponse;
 import net.md_5.bungee.protocol.packet.EntityStatus;
@@ -38,6 +39,7 @@ import net.md_5.bungee.protocol.packet.ScoreboardObjective;
 import net.md_5.bungee.protocol.packet.ScoreboardScore;
 import net.md_5.bungee.protocol.packet.ScoreboardScoreReset;
 import net.md_5.bungee.protocol.packet.ServerData;
+import net.md_5.bungee.protocol.packet.ServerLinks;
 import net.md_5.bungee.protocol.packet.SetCompression;
 import net.md_5.bungee.protocol.packet.StartConfiguration;
 import net.md_5.bungee.protocol.packet.StatusRequest;
@@ -51,6 +53,7 @@ import net.md_5.bungee.protocol.packet.Team;
 import net.md_5.bungee.protocol.packet.Title;
 import net.md_5.bungee.protocol.packet.TitleTimes;
 import net.md_5.bungee.protocol.packet.Transfer;
+import net.md_5.bungee.protocol.packet.UnsignedClientCommand;
 import net.md_5.bungee.protocol.packet.ViewDistance;
 import ru.leymooo.botfilter.packets.Player;
 import ru.leymooo.botfilter.packets.PlayerPosition;
@@ -123,6 +126,10 @@ public abstract class AbstractPacketHandler
     }
 
     public void handle(ClientCommand command) throws Exception
+    {
+    }
+
+    public void handle(UnsignedClientCommand command) throws Exception
     {
     }
 
@@ -283,6 +290,14 @@ public abstract class AbstractPacketHandler
     }
 
     public void handle(CookieResponse cookieResponse) throws Exception
+    {
+    }
+
+    public void handle(DisconnectReportDetails disconnectReportDetails) throws Exception
+    {
+    }
+
+    public void handle(ServerLinks serverLinks) throws Exception
     {
     }
 }
