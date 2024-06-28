@@ -28,7 +28,7 @@ public class CachedExpPackets
         {
             setExp.setExpBar( setExp.getExpBar() + expinterval );
             setExp.setLevel( setExp.getLevel() + 1 );
-            PacketUtils.fillArray( byteBuf[i], setExp, Protocol.BotFilter );
+            PacketUtils.fillArray( byteBuf[i], setExp, Protocol.BOTFILTER );
         }
     }
 

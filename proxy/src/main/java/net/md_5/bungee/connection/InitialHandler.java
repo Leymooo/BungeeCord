@@ -659,6 +659,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
 
 
         UserConnection userCon = new UserConnection( bungee, ch, getName(), InitialHandler.this );
+        this.userCon = userCon;
         userCon.setCompressionThreshold( BungeeCord.getInstance().config.getCompressionThreshold() );
 
         boolean isLoginSuccessSent = false;

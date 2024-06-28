@@ -111,7 +111,7 @@ public class Settings extends Config
             "Меняйте ссылку если по какой-то причине не качается по этой",
             "Файл должен заканчиваться на .mmdb или быть запакован в .tar.gz"
             })
-        public String NEW_GEOIP_DOWNLOAD_URL = "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=%license_key%&suffix=tar.gz";
+        public String NEW_GEOIP_DOWNLOAD_URL = "https://git.io/GeoLite2-City.mmdb";
         @Comment(
             {
             "Если ключ перестанет работать, то для того чтобы получить новый необходимо зарегестироваться на https://www.maxmind.com/",

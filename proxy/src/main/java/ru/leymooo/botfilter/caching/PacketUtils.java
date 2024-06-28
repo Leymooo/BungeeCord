@@ -10,11 +10,12 @@ import java.util.List;
 import java.util.Random;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.chat.ComponentSerializer;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.packet.FinishConfiguration;
+import net.md_5.bungee.protocol.packet.GameState;
 import net.md_5.bungee.protocol.packet.KeepAlive;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.PluginMessage;
@@ -35,32 +36,45 @@ import ru.leymooo.botfilter.utils.Dimension;
 public class PacketUtils
 {
 
-    private static int[] VERSION_REWRITE = new int[1024];
     public static final CachedCaptcha captchas = new CachedCaptcha();
-    private static final CachedPacket[] cachedPackets = new CachedPacket[11];
+    public static final List<CachedPacket> chunksPackets = new ArrayList<>();
+    private static final CachedPacket[] cachedPackets = new CachedPacket[14];
     private static final HashMap<KickType, CachedPacket> kickMessagesGame = new HashMap<>( 3 );
     private static final HashMap<KickType, CachedPacket> kickMessagesLogin = new HashMap<>( 4 );
+
+    private static final HashMap<Integer, CachedRegistryData> configurationRegistry = new HashMap<>();
+
     public static int PROTOCOLS_COUNT = ProtocolConstants.SUPPORTED_VERSION_IDS.size();
     public static int CLIENTID = new Random().nextInt( Integer.MAX_VALUE - 100 ) + 50;
     public static int KEEPALIVE_ID = 9876;
     public static CachedExpPackets expPackets;
-
-    public static final List<CachedPacket> chunksPackets = new ArrayList<>();
-
     /**
      * 0 - Checking_fall, 1 - checking_captcha, 2 - sus
      */
     public static CachedTitle[] titles = new CachedTitle[3];
     public static CachedMessage[] messages = new CachedMessage[3];
+    private static int[] VERSION_REWRITE = new int[1024];
 
-    public static ByteBuf createPacket(DefinedPacket packet, int id, int protocol)
+    public static ByteBuf createPacket(DefinedPacket packet, Protocol protocol, int id, int protocolVersion)
     {
         final ByteBuf buffer = ByteBufAllocator.DEFAULT.buffer();
         DefinedPacket.writeVarInt( id, buffer );
-        packet.write( buffer, ProtocolConstants.Direction.TO_CLIENT, protocol );
+        if ( protocol == null )
+        {
+            packet.write( buffer, ProtocolConstants.Direction.TO_CLIENT, protocolVersion );
+        } else
+        {
+            packet.write( buffer, protocol, ProtocolConstants.Direction.TO_CLIENT, protocolVersion );
+        }
         buffer.capacity( buffer.readableBytes() );
         return buffer;
     }
+
+    public static ByteBuf createPacket(DefinedPacket packet, int id, int protocolVersion)
+    {
+        return createPacket( packet, null, id, protocolVersion );
+    }
+
 
     public static void init()
     {
@@ -104,6 +118,11 @@ public class PacketUtils
             }
         }
 
+        for ( CachedRegistryData packets : configurationRegistry.values() )
+        {
+            packets.release();
+        }
+
         kickMessagesGame.clear();
 
         expPackets = new CachedExpPackets();
@@ -122,23 +141,31 @@ public class PacketUtils
             dimension = Dimension.THE_END;
         }
         DefinedPacket[] packets =
+            {
+                new JoinGame( CLIENTID, dimension ), //0
+                new TimeUpdate( 1, 23700 ), //1
+                new PlayerAbilities( (byte) 6, 0f, 0f ), //2
+                new PlayerPositionAndLook( 7.00, 450, 7.00, 90f, 38f, 9876, false ), //3
+                new SetSlot( 0, 36, 358, 1, 0 ), //4 map 1.8+
+                new SetSlot( 0, 36, -1, 0, 0 ), //5 map reset
+                new KeepAlive( KEEPALIVE_ID ), //6
+                new PlayerPositionAndLook( 7.00, 450, 7.00, 90f, 10f, 9876, false ), //7
+                new SetExp( 0, 0, 0 ), //8
+                createPluginMessage(), //9
+                new DefaultSpawnPosition( 7, 450, 7, 123 ),//10
+                new FinishConfiguration(), //11
+                new GameState( (short) 13, 0f ), //12
+            };
+
+
+        for ( int version : Arrays.asList( ProtocolConstants.MINECRAFT_1_20_2, ProtocolConstants.MINECRAFT_1_20_3, ProtocolConstants.MINECRAFT_1_20_5, ProtocolConstants.MINECRAFT_1_21 ) )
         {
-            new JoinGame( CLIENTID, dimension ), //0
-            new TimeUpdate( 1, 23700 ), //1
-            new PlayerAbilities( (byte) 6, 0f, 0f ), //2
-            new PlayerPositionAndLook( 7.00, 450, 7.00, 90f, 38f, 9876, false ), //3
-            new SetSlot( 0, 36, 358, 1, 0 ), //4 map 1.8+
-            new SetSlot( 0, 36, -1, 0, 0 ), //5 map reset
-            new KeepAlive( KEEPALIVE_ID ), //6
-            new PlayerPositionAndLook( 7.00, 450, 7.00, 90f, 10f, 9876, false ), //7
-            new SetExp( 0, 0, 0 ), //8
-            createPluginMessage(), //9
-            new DefaultSpawnPosition( 7, 450, 7, 123 ) //10
-        };
+            configurationRegistry.put( version, new CachedRegistryData( dimension, version ) );
+        }
 
         for ( int i = 0; i < packets.length; i++ )
         {
-            PacketUtils.cachedPackets[i] = new CachedPacket( packets[i], Protocol.BotFilter, Protocol.GAME );
+            PacketUtils.cachedPackets[i] = new CachedPacket( packets[i], Protocol.BOTFILTER, Protocol.BOTFILTER_CONFIGURATION, Protocol.GAME, Protocol.CONFIGURATION );
         }
 
         if ( chunksPackets.isEmpty() )
@@ -147,19 +174,19 @@ public class PacketUtils
             {
                 for ( int z = -1; z <= 1; z++ )
                 {
-                    chunksPackets.add( new CachedPacket( new EmptyChunkPacket( x, z ), Protocol.BotFilter ) );
+                    chunksPackets.add( new CachedPacket( new EmptyChunkPacket( x, z ), Protocol.BOTFILTER ) );
                 }
             }
         }
 
         messages = new CachedMessage[]
-        {
-            new CachedMessage( Settings.IMP.MESSAGES.CHECKING_CAPTCHA_WRONG.replaceFirst( "%s", "2" ).replaceFirst( "%s", "попытки" ) ),
-            new CachedMessage( Settings.IMP.MESSAGES.CHECKING_CAPTCHA_WRONG.replaceFirst( "%s", "1" ).replaceFirst( "%s", "попытка" ) ),
-            new CachedMessage( Settings.IMP.MESSAGES.CHECKING ),
-            new CachedMessage( Settings.IMP.MESSAGES.CHECKING_CAPTCHA ),
-            new CachedMessage( Settings.IMP.MESSAGES.SUCCESSFULLY )
-        };
+            {
+                new CachedMessage( Settings.IMP.MESSAGES.CHECKING_CAPTCHA_WRONG.replaceFirst( "%s", "2" ).replaceFirst( "%s", "попытки" ) ),
+                new CachedMessage( Settings.IMP.MESSAGES.CHECKING_CAPTCHA_WRONG.replaceFirst( "%s", "1" ).replaceFirst( "%s", "попытка" ) ),
+                new CachedMessage( Settings.IMP.MESSAGES.CHECKING ),
+                new CachedMessage( Settings.IMP.MESSAGES.CHECKING_CAPTCHA ),
+                new CachedMessage( Settings.IMP.MESSAGES.SUCCESSFULLY )
+            };
 
 
         Protocol kickGame = Protocol.GAME;
@@ -190,7 +217,8 @@ public class PacketUtils
     {
         ByteBuf brand = ByteBufAllocator.DEFAULT.heapBuffer();
         DefinedPacket.writeString( "BotFilter (https://vk.cc/8hr1pU)", brand );
-        DefinedPacket packet = new PluginMessage( "MC|Brand", DefinedPacket.toArray( brand ), false );
+        PluginMessage packet = new PluginMessage( "MC|Brand", DefinedPacket.toArray( brand ), false );
+        packet.transform = true;
         brand.release();
         return packet;
     }
@@ -208,6 +236,34 @@ public class PacketUtils
         }
 
         return -1;
+    }
+
+    public static int getPacketId(DefinedPacket packet, int version, Protocol protocol)
+    {
+        try
+        {
+            return protocol.TO_CLIENT.getId( packet.getClass(), version );
+        } catch ( Exception ignore )
+        {
+
+            return -1;
+        }
+    }
+
+    public static Protocol findProtocolContainsPacket(DefinedPacket packet, int version, Protocol... protocols)
+    {
+        for ( Protocol protocol : protocols )
+        {
+            try
+            {
+                protocol.TO_CLIENT.getId( packet.getClass(), version );
+                return protocol;
+            } catch ( Exception ignore )
+            {
+            }
+        }
+
+        return null;
     }
 
     public static void releaseByteBuf(ByteBuf buf)
@@ -241,7 +297,12 @@ public class PacketUtils
                 continue;
             }
             int versionRewrited = rewriteVersion( version );
-            int newPacketId = PacketUtils.getPacketId( packet, version, protocols );
+            Protocol protocol = PacketUtils.findProtocolContainsPacket( packet, version, protocols );
+            if ( protocol == null )
+            {
+                continue;
+            }
+            int newPacketId = PacketUtils.getPacketId( packet, version, protocol );
             if ( newPacketId == -1 )
             {
                 continue;
@@ -249,11 +310,11 @@ public class PacketUtils
             if ( newPacketId != oldPacketId )
             {
                 oldPacketId = newPacketId;
-                oldBuf = PacketUtils.createPacket( packet, oldPacketId, version );
+                oldBuf = PacketUtils.createPacket( packet, protocol, oldPacketId, version );
                 buffer[versionRewrited] = oldBuf;
             } else
             {
-                ByteBuf newBuf = PacketUtils.createPacket( packet, oldPacketId, version );
+                ByteBuf newBuf = PacketUtils.createPacket( packet, protocol, oldPacketId, version );
                 if ( newBuf.equals( oldBuf ) )
                 {
                     buffer[versionRewrited] = oldBuf;
@@ -281,10 +342,26 @@ public class PacketUtils
         return rewritten;
     }
 
+
+    public static void configure(Channel channel, int version)
+    {
+        if ( version >= ProtocolConstants.MINECRAFT_1_20_2 )
+        {
+            configurationRegistry.get( version ).write( channel );
+            channel.write( getCachedPacket( 11 ).get( version ), channel.voidPromise() );
+        }
+        channel.flush();
+    }
+
+
     public static void spawnPlayer(Channel channel, int version, boolean disableFall, boolean captcha)
     {
         channel.write( getCachedPacket( PacketsPosition.LOGIN ).get( version ), channel.voidPromise() );
         channel.write( getCachedPacket( PacketsPosition.PLUGIN_MESSAGE ).get( version ), channel.voidPromise() );
+        if ( version >= ProtocolConstants.MINECRAFT_1_20_3 )
+        {
+            channel.write( getCachedPacket( 12 ).get( version ), channel.voidPromise() );
+        }
         for ( CachedPacket cachedPacket : chunksPackets )
         {
             channel.write( cachedPacket.get( version ), channel.voidPromise() );
@@ -302,7 +379,7 @@ public class PacketUtils
             channel.write( getCachedPacket( PacketsPosition.PLAYERPOSANDLOOK ).get( version ), channel.voidPromise() );
         }
         channel.write( getCachedPacket( PacketsPosition.TIME ).get( version ), channel.voidPromise() );
-        //channel.flush(); Не очищяем поскольку это будет в другом месте
+        channel.flush(); //Не очищяем поскольку это будет в другом месте
     }
 
     public static void kickPlayer(KickType kick, Protocol protocol, ChannelWrapper wrapper, int version)

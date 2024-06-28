@@ -364,13 +364,12 @@ public class ServerConnector extends PacketHandler
 
         if ( user.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_20_2 )
         {
-            if ( user.getServer() != null )
+            if ( user.getServer() != null || !user.isNeedLogin() )
             {
                 // Begin config mode
                 user.unsafe().sendPacket( new StartConfiguration() );
             } else
             {
-                //TODO BF Check what is going here
                 LoginResult loginProfile = user.getPendingConnection().getLoginProfile();
                 user.unsafe().sendPacket( new LoginSuccess( user.getRewriteId(), user.getName(), ( loginProfile == null ) ? null : loginProfile.getProperties() ) );
                 user.getCh().setEncodeProtocol( Protocol.CONFIGURATION );

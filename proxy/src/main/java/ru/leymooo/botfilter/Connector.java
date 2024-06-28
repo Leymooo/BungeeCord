@@ -18,7 +18,9 @@ import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.packet.Chat;
 import net.md_5.bungee.protocol.packet.ClientChat;
 import net.md_5.bungee.protocol.packet.ClientSettings;
+import net.md_5.bungee.protocol.packet.FinishConfiguration;
 import net.md_5.bungee.protocol.packet.KeepAlive;
+import net.md_5.bungee.protocol.packet.LoginAcknowledged;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import ru.leymooo.botfilter.BotFilter.CheckState;
 import ru.leymooo.botfilter.caching.CachedCaptcha.CaptchaHolder;
@@ -199,6 +201,7 @@ public class Connector extends MoveHandler
             packetDecompressor.checking = false;
         }
         userConnection.setNeedLogin( false );
+        userConnection.getCh().setProtocol( Protocol.GAME );
         userConnection.getPendingConnection().finishLoginWithLoginEvent( true );
         markDisconnected = true;
         LOGGER.log( Level.INFO, "[BotFilter] Игрок (" + name + "|" + ip + ") успешно прошёл проверку" );
@@ -211,6 +214,7 @@ public class Connector extends MoveHandler
         {
             return;
         }
+        //System.out.println( "lastY=" + lastY + "; y=" + y + "; diff=" + formatDouble( lastY - y ) + "; need=" + getSpeed( ticks ) +"; ticks=" + ticks );
         if ( state == CheckState.ONLY_CAPTCHA )
         {
             if ( lastY != y && waitingTeleportId == -1 )
@@ -219,7 +223,6 @@ public class Connector extends MoveHandler
             }
             return;
         }
-        // System.out.println( "lastY=" + lastY + "; y=" + y + "; diff=" + formatDouble( lastY - y ) + "; need=" + getSpeed( ticks ) +"; ticks=" + ticks );
         if ( formatDouble( lastY - y ) != getSpeed( ticks ) )
         {
             if ( state == CheckState.CAPTCHA_ON_POSITION_FAILED )
@@ -267,6 +270,20 @@ public class Connector extends MoveHandler
     {
         handleChat( chat.getMessage() );
 
+    }
+
+    @Override
+    public void handle(LoginAcknowledged loginAcknowledged) throws Exception
+    {
+        this.userConnection.getCh().setDecodeProtocol( Protocol.CONFIGURATION );
+        PacketUtils.configure(channel, version);
+    }
+
+    @Override
+    public void handle(FinishConfiguration finishConfiguration) throws Exception
+    {
+        this.userConnection.getCh().setDecodeProtocol( Protocol.BOTFILTER );
+        this.spawn();
     }
 
     @Override

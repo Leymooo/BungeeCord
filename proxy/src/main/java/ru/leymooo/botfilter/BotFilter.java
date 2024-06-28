@@ -24,6 +24,7 @@ import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.protocol.Protocol;
+import net.md_5.bungee.protocol.ProtocolConstants;
 import ru.leymooo.botfilter.caching.CachedCaptcha;
 import ru.leymooo.botfilter.caching.PacketUtils;
 import ru.leymooo.botfilter.caching.PacketUtils.KickType;
@@ -73,7 +74,6 @@ public class BotFilter
     {
         Settings.IMP.reload( new File( "BotFilter", "config.yml" ) );
         Scoreboard.DISABLE_DUBLICATE = Settings.IMP.FIX_SCOREBOARD_TEAMS;
-        checkForUpdates( startup );
         PacketUtils.init();
         if ( !CachedCaptcha.generated )
         {
@@ -169,7 +169,7 @@ public class BotFilter
     public void connectToBotFilter(UserConnection userConnection)
     {
         userConnection.getCh().setEncodeProtocol( Protocol.GAME );
-        userConnection.getCh().setDecodeProtocol( Protocol.BotFilter );
+        userConnection.getCh().setDecodeProtocol( userConnection.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_20_2 ? Protocol.LOGIN : Protocol.BOTFILTER );
         Connector connector = new Connector( userConnection, this );
 
         if ( !addConnection( connector ) )
@@ -183,7 +183,11 @@ public class BotFilter
                 packetDecompressor.checking = true;
             }
             userConnection.getCh().getHandle().pipeline().get( HandlerBoss.class ).setHandler( connector );
-            connector.spawn();
+            //1.20.2 + will spawn after LoginAcknowledged packet
+            if (userConnection.getPendingConnection().getVersion() < ProtocolConstants.MINECRAFT_1_20_2)
+            {
+                connector.spawn();
+            }
         }
     }
 

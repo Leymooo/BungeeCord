@@ -55,6 +55,14 @@ public class PluginMessage extends DefinedPacket
      * Allow this packet to be sent as an "extended" packet.
      */
     private boolean allowExtendedPacket = false;
+    public boolean transform;
+
+    public PluginMessage(String tag, byte[] data, boolean allowExtendedPacket)
+    {
+        this.tag = tag;
+        this.data = data;
+        this.allowExtendedPacket = allowExtendedPacket;
+    }
 
     @Override
     public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
@@ -69,6 +77,11 @@ public class PluginMessage extends DefinedPacket
     @Override
     public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
     {
+        //BotFilter start
+        if (transform)
+        {
+            tag = transformBrand( tag, protocolVersion );
+        } //BotFilter End
         writeString( ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 ) ? MODERNISE.apply( tag ) : tag, buf );
         buf.writeBytes( data );
     }
@@ -83,4 +96,15 @@ public class PluginMessage extends DefinedPacket
     {
         return new DataInputStream( new ByteArrayInputStream( data ) );
     }
+
+    //BotFilter start
+    private String transformBrand(String input, int protocolVersion)
+    {
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 && "MC|Brand".equals( input ) )
+        {
+            return "minecraft:brand";
+        }
+        return input;
+    }
+    //BotFilter end
 }

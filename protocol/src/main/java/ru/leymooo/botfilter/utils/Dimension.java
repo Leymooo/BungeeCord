@@ -34,6 +34,7 @@ public class Dimension
 {
     static CompoundTag damageType;
     static CompoundTag damageType1_20;
+    static CompoundTag damageType1_21;
 
     static
     {
@@ -43,6 +44,21 @@ public class Dimension
                 new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.19.4.nbt" ) ) ) ) ).get( "" );
             damageType1_20 = (CompoundTag) CompoundTag.read(
                 new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.20.nbt" ) ) ) ) ).get( "" );
+            damageType1_21 = (CompoundTag) CompoundTag.read(
+                new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.20.nbt" ) ) ) ) ).get( "" );
+
+            ListTag list = damageType1_21.get( "value" ).asList();
+            CompoundTag campfire = new CompoundTag();
+            campfire.add( "name", new StringTag( "minecraft:campfire" ));
+            campfire.add( "id", new IntTag( 44 ));
+
+            CompoundTag element = new CompoundTag();
+            element.add("scaling", new StringTag( "when_caused_by_living_non_player" ));
+            element.add("message_id", new StringTag( "inFire" ));
+            element.add("exhaustion", new FloatTag( 0.1f ));
+            campfire.add( "element", element );
+            list.add( campfire );
+            System.out.println(damageType1_21.dumpTree());
         } catch ( IOException e )
         {
             throw new RuntimeException( e );
@@ -53,11 +69,11 @@ public class Dimension
         "minecraft:infiniburn_overworld", false, true, true,
         "minecraft:overworld", true, 0, 0,
         256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.PLAINS, Biome.SWAMP, Biome.SWAMP_HILLS ) );
-    public static Dimension THE_NETHER = new Dimension( "minecraft:the_nether", -1, 2, false, true, 0.0f,
+    public static Dimension THE_NETHER = new Dimension( "minecraft:the_nether", -1, 1, false, true, 0.0f,
         "minecraft:infiniburn_nether", false, true, true,
         "minecraft:the_nether", true, 0, 0,
         256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.NETHER_WASTES ) );
-    public static Dimension THE_END = new Dimension( "minecraft:the_end", 1, 3, false, true, 0.0f,
+    public static Dimension THE_END = new Dimension( "minecraft:the_end", 1, 2, false, true, 0.0f,
         "minecraft:infiniburn_end", false, true, true,
         "minecraft:the_end", true, 0, 0,
         256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.THE_END ) );
@@ -117,14 +133,29 @@ public class Dimension
 
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_19_4 )
         {
-            root.add( "minecraft:damage_type", protocolVersion >= ProtocolConstants.MINECRAFT_1_20 ? damageType1_20 : damageType );
+
+            CompoundTag damage =  protocolVersion >= ProtocolConstants.MINECRAFT_1_20 ? damageType1_20 : damageType;
+
+            if (protocolVersion >= ProtocolConstants.MINECRAFT_1_21) {
+                damage = damageType1_21;
+            }
+
+
+            root.add( "minecraft:damage_type",  damage);
         }
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_19 )
         {
             root.add( "minecraft:chat_type", createChatRegistry( protocolVersion ) );
         }
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21 )
+        {
+            root.add( "minecraft:painting_variant", createPaintingVariant( protocolVersion ) );
+            root.add( "minecraft:wolf_variant", createWoldVariant( protocolVersion ) );
+        }
 
-        return new NamedTag( "", root );
+        System.out.println(root.dumpTree());
+
+        return protocolVersion >= ProtocolConstants.MINECRAFT_1_20_2 ? root : new NamedTag( "", root );
     }
 
     public Tag getAttributes(int protocolVersion)
@@ -236,6 +267,49 @@ public class Dimension
         return root;
     }
 
+
+    private CompoundTag createPaintingVariant(int version)
+    {
+
+        CompoundTag root = new CompoundTag();
+        root.add( "type", new StringTag( "minecraft:painting_variant" ) );
+        CompoundTag alban = new CompoundTag();
+        alban.add( "name", new StringTag( "minecraft:alban" ) );
+        alban.add( "id", new IntTag( 0 ) );
+
+        CompoundTag paintingVariant = new CompoundTag();
+        paintingVariant.add("width", new IntTag( 1 ));
+        paintingVariant.add("height", new IntTag( 1 ));
+        paintingVariant.add("asset_id", new StringTag( "minecraft:alban" ));
+
+        alban.add( "element", paintingVariant );
+
+        root.add( "value", new ListTag( Tag.TAG_COMPOUND, Arrays.asList( alban ) ) );
+        return root;
+    }
+
+    private CompoundTag createWoldVariant(int version)
+    {
+
+        CompoundTag root = new CompoundTag();
+        root.add( "type", new StringTag( "minecraft:wolf_variant" ) );
+        CompoundTag ashen = new CompoundTag();
+        ashen.add( "name", new StringTag( "minecraft:ashen" ) );
+        ashen.add( "id", new IntTag( 0 ) );
+
+        CompoundTag ashenProperties = new CompoundTag();
+        ashenProperties.add("wild_texture", new StringTag( "minecraft:entity/wolf/wolf_ashen" ));
+        ashenProperties.add("tame_texture", new StringTag( "minecraft:entity/wolf/wolf_ashen_tame" ));
+        ashenProperties.add("angry_texture", new StringTag( "minecraft:entity/wolf/wolf_ashen_angry" ));
+        ashenProperties.add("biomes", new ListTag(Tag.TAG_STRING, Arrays.asList( new StringTag( "minecraft:plains" ) ) ));
+
+        ashen.add( "element", ashenProperties );
+
+        root.add( "value", new ListTag( Tag.TAG_COMPOUND, Arrays.asList( ashen ) ) );
+        return root;
+    }
+
+
     private CompoundTag encodeBiome(Biome biome)
     {
         CompoundTag biomeTag = new CompoundTag();
@@ -285,23 +359,23 @@ public class Dimension
     @Getter
     public enum Biome
     {
-        PLAINS( "minecraft:plains", 1, "rain", 0.125f, 0.8f, 0.05f,
+        PLAINS( "minecraft:plains", 0, "rain", 0.125f, 0.8f, 0.05f,
             0.4f, "plains", 7907327, 329011, 12638463,
             4159204, 6000, 2.0d, 8, "minecraft:ambient.cave",
             null, Integer.MIN_VALUE ),
-        SWAMP( "minecraft:swamp", 6, "rain", -0.2f, 0.8f, 0.1f, 0.9f,
+        SWAMP( "minecraft:swamp", 1, "rain", -0.2f, 0.8f, 0.1f, 0.9f,
             "swamp", 7907327, 2302743, 12638463, 6388580,
             6000, 2.0d, 8, "minecraft:ambient.cave", "swamp",
             6975545 ),
-        SWAMP_HILLS( "minecraft:swamp_hills", 134, "rain", -0.1f, 0.8f, 0.3f,
+        SWAMP_HILLS( "minecraft:swamp_hills", 2, "rain", -0.1f, 0.8f, 0.3f,
             0.9f, "swamp", 7907327, 2302743, 12638463,
             6388580, 6000, 2.0d, 8, "minecraft:ambient.cave",
             "swamp", 6975545 ),
-        NETHER_WASTES( "minecraft:nether_wastes", 8, "none", 0.1f, 2.0f, 0.2f,
+        NETHER_WASTES( "minecraft:nether_wastes", 3, "none", 0.1f, 2.0f, 0.2f,
             0.0f, "nether", 7254527, 329011, 3344392,
             4159204, 6000, 2.0d, 8, "minecraft:ambient.cave",
             "swamp", 6975545 ),
-        THE_END( "minecraft:the_end", 9, "none", 0.1f, 0.5f, 0.2f,
+        THE_END( "minecraft:the_end", 4, "none", 0.1f, 0.5f, 0.2f,
             0.5f, "the_end", 7907327, 10518688, 12638463,
             4159204, 6000, 2.0d, 8, "minecraft:ambient.cave",
             "swamp", 6975545 );

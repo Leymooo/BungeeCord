@@ -11,6 +11,7 @@ import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.ProtocolConstants;
 import ru.leymooo.botfilter.utils.Dimension;
+import se.llbit.nbt.Tag;
 
 @Data
 @RequiredArgsConstructor
@@ -33,6 +34,7 @@ public class JoinGame extends DefinedPacket
     private boolean normalRespawn = true;
     private boolean debug = false;
     private boolean flat = true;
+
 
     private Dimension dimension;
     public JoinGame()
@@ -62,10 +64,16 @@ public class JoinGame extends DefinedPacket
         {
             buf.writeBoolean( hardcore );
         }
-        buf.writeByte( gameMode );
+        if ( protocolVersion < ProtocolConstants.MINECRAFT_1_20_2 )
+        {
+            buf.writeByte( gameMode );
+        }
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16 )
         {
-            buf.writeByte( previousGameMode );
+            if ( protocolVersion < ProtocolConstants.MINECRAFT_1_20_2 )
+            {
+                buf.writeByte( previousGameMode );
+            }
 
             writeVarInt( worldNames.size(), buf );
             for ( String world : worldNames )
@@ -73,19 +81,25 @@ public class JoinGame extends DefinedPacket
                 writeString( world, buf );
             }
 
-            writeTag( dimension.getFullCodec( protocolVersion ), buf, protocolVersion );
-        }
+            if ( protocolVersion < ProtocolConstants.MINECRAFT_1_20_2 )
+            {
+                writeTag( dimension.getFullCodec( protocolVersion ), buf, protocolVersion );
+            }
 
+        }
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16 )
         {
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_19 || protocolVersion <= ProtocolConstants.MINECRAFT_1_16_1 )
-            {
-                writeString( worldName, buf );
-            } else
+            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16_2 && protocolVersion < ProtocolConstants.MINECRAFT_1_19 )
             {
                 writeTag( dimension.getAttributes( protocolVersion ), buf, protocolVersion );
+            } else if ( protocolVersion < ProtocolConstants.MINECRAFT_1_20_2 )
+            {
+                writeString( worldName, buf );
             }
-            writeString( worldName, buf );
+            if ( protocolVersion < ProtocolConstants.MINECRAFT_1_20_2 )
+            {
+                writeString( worldName, buf );
+            }
         } else if ( protocolVersion > ProtocolConstants.MINECRAFT_1_9 )
         {
             buf.writeInt( dimensionId ); //dim
@@ -95,7 +109,10 @@ public class JoinGame extends DefinedPacket
         }
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_15 )
         {
-            buf.writeLong( seed );
+            if ( protocolVersion < ProtocolConstants.MINECRAFT_1_20_2 )
+            {
+                buf.writeLong( seed );
+            }
         }
         if ( protocolVersion < ProtocolConstants.MINECRAFT_1_14 )
         {
@@ -128,6 +145,21 @@ public class JoinGame extends DefinedPacket
         {
             buf.writeBoolean( normalRespawn );
         }
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_20_2 )
+        {
+            buf.writeBoolean( true ); //limited crafring
+            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_20_5 )
+            {
+                writeVarInt( 0, buf ); //dimension id
+            } else
+            {
+                writeString( worldName, buf ); //dimension
+            }
+            writeString( worldName, buf );
+            buf.writeLong( seed );
+            buf.writeByte( gameMode );
+            buf.writeByte( previousGameMode );
+        }
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16 )
         {
             buf.writeBoolean( debug );
@@ -141,6 +173,11 @@ public class JoinGame extends DefinedPacket
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_20 )
         {
             writeVarInt( 0, buf ); //portal cooldown
+        }
+
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_20_5 )
+        {
+            buf.writeBoolean( false ); //secure profile
         }
 
     }

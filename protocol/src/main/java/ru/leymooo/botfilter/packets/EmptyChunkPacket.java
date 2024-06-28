@@ -11,6 +11,10 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.ProtocolConstants;
+import se.llbit.nbt.CompoundTag;
+import se.llbit.nbt.LongArrayTag;
+import se.llbit.nbt.NamedTag;
+import se.llbit.nbt.Tag;
 
 @Data
 @NoArgsConstructor
@@ -132,25 +136,11 @@ public class EmptyChunkPacket extends DefinedPacket
 
     private void write1_14Heightmaps(ByteBuf buf, int version)
     {
-        try ( ByteBufOutputStream output = new ByteBufOutputStream( buf ) )
-        {
-            output.writeByte( 10 ); //CompoundTag
-            output.writeUTF( "" ); // CompoundName
-            output.writeByte( 10 ); //CompoundTag
-            output.writeUTF( "root" ); //root compound
-            output.writeByte( 12 ); //long array
-            output.writeUTF( "MOTION_BLOCKING" );
-            long[] longArrayTag = new long[version < ProtocolConstants.MINECRAFT_1_18 ? 36 : 37];
-            output.writeInt( longArrayTag.length );
-            for ( int i = 0, length = longArrayTag.length; i < length; i++ )
-            {
-                output.writeLong( longArrayTag[i] );
-            }
-            buf.writeByte( 0 ); //end of compound
-            buf.writeByte( 0 ); //end of compound
-        } catch ( IOException ex )
-        {
-            throw new RuntimeException( ex );
-        }
+        long[] longArrayTag = new long[version < ProtocolConstants.MINECRAFT_1_18 ? 36 : 37];
+        CompoundTag compoundTag = new CompoundTag();
+        compoundTag.add( "MOTION_BLOCKING", new LongArrayTag( longArrayTag ) );
+        Tag write = version >= ProtocolConstants.MINECRAFT_1_20_2 ? compoundTag : new NamedTag( "", compoundTag );
+        writeTag( write, buf, version );
+
     }
 }

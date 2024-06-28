@@ -24,6 +24,8 @@ public class CachedCaptcha
     private static final int PACKETID_115and117 = 0x27;
     private static final int PACKETID_1162and1193 = 0x25;
     private static final int PACKETID_1194 = 0x29;
+    private static final int PACKETID_1202 = 0x2A;
+    private static final int PACKETID_1205 = 0x2C;
 
 
     private static final Random random = new Random();
@@ -47,8 +49,10 @@ public class CachedCaptcha
         ByteBuf byteBuf1191 = PacketUtils.createPacket( map, PACKETID_113and114and116_and1191, ProtocolConstants.MINECRAFT_1_19_1 );
         ByteBuf byteBuf1193 = PacketUtils.createPacket( map, PACKETID_1162and1193, ProtocolConstants.MINECRAFT_1_19_3 );
         ByteBuf byteBuf1194 = PacketUtils.createPacket( map, PACKETID_1194, ProtocolConstants.MINECRAFT_1_19_4 );
+        ByteBuf byteBuf1202 = PacketUtils.createPacket( map, PACKETID_1202, ProtocolConstants.MINECRAFT_1_20_2 );
+        ByteBuf byteBuf1205 = PacketUtils.createPacket( map, PACKETID_1205, ProtocolConstants.MINECRAFT_1_20_5 );
 
-        captchas[counter.getAndIncrement()] = new CaptchaHolder( answer, byteBuf18, byteBuf19, byteBuf113, byteBuf114And116, byteBuf115, byteBuf1162, byteBuf117, byteBuf119, byteBuf1191, byteBuf1193, byteBuf1194 );
+        captchas[counter.getAndIncrement()] = new CaptchaHolder( answer, byteBuf18, byteBuf19, byteBuf113, byteBuf114And116, byteBuf115, byteBuf1162, byteBuf117, byteBuf119, byteBuf1191, byteBuf1193, byteBuf1194, byteBuf1202, byteBuf1205 );
 
         //TODO: Do something with this shit.
     }
@@ -65,7 +69,7 @@ public class CachedCaptcha
         private final String answer;
         //now its not funny
         //ну и кринж...
-        private final ByteBuf buf18, buf19, buf113, buf114And116, buf115, buf1162, buf117, buf119, buf1191, buf1193, buf1194;
+        private final ByteBuf buf18, buf19, buf113, buf114And116, buf115, buf1162, buf117, buf119, buf1191, buf1193, buf1194,buf1202,buf1205;
 
         public void write(Channel channel, int version, boolean flush)
         {
@@ -106,6 +110,12 @@ public class CachedCaptcha
             } else if ( version <= ProtocolConstants.MINECRAFT_1_20 )
             {
                 channel.write( buf1194.retainedDuplicate(), channel.voidPromise() );
+            } else if ( version <= ProtocolConstants.MINECRAFT_1_20_3 )
+            {
+                channel.write( buf1202.retainedDuplicate(), channel.voidPromise() );
+            } else if ( version <= ProtocolConstants.MINECRAFT_1_21 )
+            {
+                channel.write( buf1205.retainedDuplicate(), channel.voidPromise() );
             } else
             {
                 throw new IllegalArgumentException( "version not found: " + version );
