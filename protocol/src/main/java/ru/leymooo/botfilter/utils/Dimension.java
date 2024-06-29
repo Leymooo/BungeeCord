@@ -58,7 +58,6 @@ public class Dimension
             element.add("exhaustion", new FloatTag( 0.1f ));
             campfire.add( "element", element );
             list.add( campfire );
-            System.out.println(damageType1_21.dumpTree());
         } catch ( IOException e )
         {
             throw new RuntimeException( e );
@@ -152,8 +151,6 @@ public class Dimension
             root.add( "minecraft:painting_variant", createPaintingVariant( protocolVersion ) );
             root.add( "minecraft:wolf_variant", createWoldVariant( protocolVersion ) );
         }
-
-        System.out.println(root.dumpTree());
 
         return protocolVersion >= ProtocolConstants.MINECRAFT_1_20_2 ? root : new NamedTag( "", root );
     }
