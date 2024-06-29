@@ -168,8 +168,7 @@ public class BotFilter
 
     public void connectToBotFilter(UserConnection userConnection)
     {
-        userConnection.getCh().setEncodeProtocol( Protocol.GAME );
-        userConnection.getCh().setDecodeProtocol( userConnection.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_20_2 ? Protocol.LOGIN : Protocol.BOTFILTER );
+
         Connector connector = new Connector( userConnection, this );
 
         if ( !addConnection( connector ) )
@@ -183,6 +182,12 @@ public class BotFilter
                 packetDecompressor.checking = true;
             }
             userConnection.getCh().getHandle().pipeline().get( HandlerBoss.class ).setHandler( connector );
+
+            userConnection.getPendingConnection().sendLoginSuccess();
+
+            userConnection.getCh().setEncodeProtocol( Protocol.GAME );
+            userConnection.getCh().setDecodeProtocol( userConnection.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_20_2 ? Protocol.LOGIN : Protocol.BOTFILTER );
+
             //1.20.2 + will spawn after LoginAcknowledged packet
             if (userConnection.getPendingConnection().getVersion() < ProtocolConstants.MINECRAFT_1_20_2)
             {

@@ -662,23 +662,15 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         this.userCon = userCon;
         userCon.setCompressionThreshold( BungeeCord.getInstance().config.getCompressionThreshold() );
 
-        boolean isLoginSuccessSent = false;
         boolean needCheck = bungee.getBotFilter().needCheck( this );
-        //Force send login success, if set in PlayerSetUUIDEvent
-        if (uuidEvent.getUniqueId() != null || needCheck) {
-            //TODO: sending login success should be a little different for 1.20.2+ clients. Need to check it
-            sendLoginSuccess();
-            isLoginSuccessSent = true;
-        }
 
-
-        if ( bungee.getBotFilter().needCheck( this ) )
+        if ( needCheck )
         {
             bungee.getBotFilter().connectToBotFilter( userCon );
         } else
         {
             bungee.getBotFilter().saveUser( userCon.getName().toLowerCase(), IPUtils.getAddress( userCon ), false ); //update timestamp
-            finishLoginWithLoginEvent( isLoginSuccessSent ); //if true, dont send again login success
+            finishLoginWithLoginEvent( false ); //if true, dont send again login success
         }
 
         //BotFilter: LoginEvent posting moved to finishLoginWithLoginEvent method
@@ -773,7 +765,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         bungee.getPluginManager().callEvent( new PostLoginEvent( userCon, initialServer, complete ) );
     }
 
-    private void sendLoginSuccess()
+    public void sendLoginSuccess()
     {
         unsafe.sendPacket( new LoginSuccess( getRewriteId(), getName(), ( loginProfile == null ) ? null : loginProfile.getProperties() ) );
     }
