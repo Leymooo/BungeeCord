@@ -246,6 +246,11 @@ public class ServerConnector extends PacketHandler
             user.getForgeClientHandler().setHandshakeComplete();
         }
 
+        if ( user.getServer() != null && user.getPendingConnection().getVersion() < ProtocolConstants.MINECRAFT_1_20_2 ) //BotFilter
+        {
+            user.getServer().setObsolete( true ); //BotFilter
+        }
+
         if ( user.isNeedLogin() || user.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_16 ) //BotFilter
         {
             // Once again, first connection
@@ -287,10 +292,6 @@ public class ServerConnector extends PacketHandler
             user.setDimension( login.getDimension() );
         } else
         {
-            if ( user.getServer() != null ) //BotFilter
-            {
-                user.getServer().setObsolete( true ); //BotFilter
-            }
             user.getTabListHandler().onServerChange();
 
             Scoreboard serverScoreboard = user.getServerSentScoreboard();
