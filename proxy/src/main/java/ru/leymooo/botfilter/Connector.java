@@ -68,6 +68,8 @@ public class Connector extends MoveHandler
     private long lastSend = 0, totalping = 9999;
     private boolean markDisconnected = false;
     private int pluginMessagesBytes = 0;
+    @Getter
+    private boolean checkStarted;
 
     public Connector(UserConnection userConnection, BotFilter botFilter)
     {
@@ -90,6 +92,7 @@ public class Connector extends MoveHandler
 
     public void spawn()
     {
+        checkStarted = true;
         this.botFilter.incrementBotCounter();
         if ( !Settings.IMP.PROTECTION.ALWAYS_CHECK )
         {
@@ -413,10 +416,11 @@ public class Connector extends MoveHandler
         PacketUtils.messages[index].write( getChannel(), getVersion() );
     }
 
-
     @Override
     public String toString()
     {
         return "[" + name + "|" + ip + "] <-> BotFilter";
     }
+
+
 }

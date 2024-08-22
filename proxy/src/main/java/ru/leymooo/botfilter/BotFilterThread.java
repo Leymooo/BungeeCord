@@ -53,7 +53,14 @@ public class BotFilterThread
                                             ? "Too long fall check" : "Captcha not entered" );
                                     TO_REMOVE_SET.add( entryset.getKey() );
                                     continue;
-                                } else if ( state == BotFilter.CheckState.CAPTCHA_ON_POSITION_FAILED || state == BotFilter.CheckState.ONLY_POSITION )
+                                }
+
+                                if ( !connector.isCheckStarted() )
+                                {
+                                    continue;
+                                }
+
+                                if ( state == BotFilter.CheckState.CAPTCHA_ON_POSITION_FAILED || state == BotFilter.CheckState.ONLY_POSITION )
                                 {
                                     connector.sendMessage( PacketsPosition.CHECKING_MSG );
                                 } else
