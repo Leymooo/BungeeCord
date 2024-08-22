@@ -619,34 +619,24 @@ public class InitialHandler extends PacketHandler implements PendingConnection
             }
         }
 
+        ProxiedPlayer oldName = bungee.getPlayer( getName() );
+        if ( oldName != null )
+        {
+            // TODO See #1218
+            disconnect( bungee.getTranslation( "already_connected_proxy" ) );
+            return;
+        }
+
         if ( isOnlineMode() )
         {
-            // Check for multiple connections
-            // We have to check for the old name first
-            ProxiedPlayer oldName = bungee.getPlayer( getName() );
-            if ( oldName != null )
-            {
-                // TODO See #1218
-                disconnect( bungee.getTranslation( "already_connected_proxy" ) ); // TODO: Cache this disconnect packet
-            }
             // And then also for their old UUID
             ProxiedPlayer oldID = bungee.getPlayer( getUniqueId() );
             if ( oldID != null )
             {
                 // TODO See #1218
-                disconnect( bungee.getTranslation( "already_connected_proxy" ) ); // TODO: Cache this disconnect packet
-            }
-        } else
-        {
-            // In offline mode the existing user stays and we kick the new one
-            ProxiedPlayer oldName = bungee.getPlayer( getName() );
-            if ( oldName != null )
-            {
-                // TODO See #1218
-                disconnect( bungee.getTranslation( "already_connected_proxy" ) ); // TODO: Cache this disconnect packet
+                disconnect( bungee.getTranslation( "already_connected_proxy" ) );
                 return;
             }
-
         }
 
         //BotFilter start

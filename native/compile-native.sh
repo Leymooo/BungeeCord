@@ -2,11 +2,13 @@
 
 set -eu
 
+CWD=$(pwd)
+
 echo "Compiling mbedtls"
-(cd mbedtls && make no_test)
+(cd mbedtls && CFLAGS="-fPIC -I$CWD/src/main/c -DMBEDTLS_USER_CONFIG_FILE='<mbedtls_custom_config.h>'" make no_test)
 
 echo "Compiling zlib"
-(cd zlib && CFLAGS=-fPIC ./configure --static && make)
+(cd zlib && CFLAGS="-fPIC -DNO_GZIP" ./configure --static && make)
 
 CC="gcc"
 CFLAGS="-c -fPIC -O3 -Wall -Werror -I$JAVA_HOME/include/ -I$JAVA_HOME/include/linux/"
