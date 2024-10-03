@@ -392,7 +392,14 @@ public class ServerConnector extends PacketHandler
 
         ServerInfo from = ( user.getServer() == null ) ? null : user.getServer().getInfo();
         user.setServer( server );
-        ch.getHandle().pipeline().get( HandlerBoss.class ).setHandler( new DownstreamBridge( bungee, user, server ) );
+
+        //BotFilter start
+        DownstreamBridge downstreamBridge = new DownstreamBridge( bungee, user, server );
+        ch.getHandle().pipeline().get( HandlerBoss.class ).setHandler( downstreamBridge );
+        if (user.getPendingConnection().getVersion() < ProtocolConstants.MINECRAFT_1_20_2 ) {
+            downstreamBridge.flushDelayedMessages();
+        }
+        //BotFilter end
 
         bungee.getPluginManager().callEvent( new ServerSwitchEvent( user, from ) );
 

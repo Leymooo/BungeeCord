@@ -94,12 +94,15 @@ public class DownstreamBridge extends PacketHandler
         this.bungee = bungee;
         this.con = con;
         this.server = server;
+    }
 
+    public void flushDelayedMessages()
+    {
         if ( !con.getDelayedPluginMessages().isEmpty() )
         {
             for ( PluginMessage msg : con.getDelayedPluginMessages() )
             {
-                server.getCh().write( msg );
+                server.unsafe().sendPacket( msg );
             }
             con.getDelayedPluginMessages().clear();
         }
@@ -812,7 +815,7 @@ public class DownstreamBridge extends PacketHandler
 
         receivedLogin = true;
         ServerConnector.handleLogin( bungee, server.getCh(), con, server.getInfo(), null, server, login );
-
+        flushDelayedMessages(); //BotFilter
         throw CancelSendSignal.INSTANCE;
     }
 
