@@ -81,4 +81,9 @@ public class JavaZlib implements BungeeZlib
         process( in, out );
     }
     //BotFilter end
+    @Override
+    public boolean allowComposite()
+    {
+        return true;
+    }
 }

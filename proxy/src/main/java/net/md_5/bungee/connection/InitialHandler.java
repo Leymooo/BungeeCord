@@ -10,8 +10,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
@@ -69,6 +71,8 @@ import net.md_5.bungee.protocol.packet.Handshake;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.LegacyHandshake;
 import net.md_5.bungee.protocol.packet.LegacyPing;
+import net.md_5.bungee.protocol.packet.LoginAcknowledged;
+import net.md_5.bungee.protocol.packet.LoginPayloadRequest;
 import net.md_5.bungee.protocol.packet.LoginPayloadResponse;
 import net.md_5.bungee.protocol.packet.LoginRequest;
 import net.md_5.bungee.protocol.packet.LoginSuccess;
@@ -101,6 +105,8 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     @Getter
     private final Set<String> registeredChannels = new HashSet<>();
     private State thisState = State.HANDSHAKE;
+    private int loginPayloadId;
+    private final Map<Integer, CompletableFuture<byte[]>> requestedLoginPayloads = new HashMap<>();
     private final Queue<CookieFuture> requestedCookies = new LinkedList<>();
 
     @Data
@@ -196,6 +202,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     @Override
     public void handle(LegacyHandshake legacyHandshake) throws Exception
     {
+        checkState( !this.legacy, "Not expecting LegacyHandshake" );
         this.legacy = true;
         ch.close( bungee.getTranslation( "outdated_client", bungee.getGameVersion() ) );
     }
@@ -203,7 +210,8 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     @Override
     public void handle(LegacyPing ping) throws Exception
     {
-        checkState( !this.legacy, "Multiple legacy pings" ); //BotFilter
+        checkState( !this.legacy, "Not expecting LegacyPing" ); //BotFilter
+
         this.legacy = true;
         final boolean v1_5 = ping.isV1_5();
 
@@ -344,7 +352,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     @Override
     public void handle(Handshake handshake) throws Exception
     {
-        checkState( thisState == State.HANDSHAKE, "Not expecting HANDSHAKE" ); //BotFilter
+        checkState( thisState == State.HANDSHAKE && !this.legacy, "Not expecting HANDSHAKE" ); //BotFilter
         this.handshake = handshake;
         ch.setVersion( handshake.getProtocolVersion() );
         ch.getHandle().pipeline().remove( PipelineUtils.LEGACY_KICKER );
@@ -422,7 +430,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     @Override
     public void handle(LoginRequest loginRequest) throws Exception
     {
-        checkState( thisState == State.USERNAME, "Not expecting USERNAME" ); //BotFilter
+        checkState( thisState == State.USERNAME && this.loginRequest == null, "Not expecting USERNAME" ); //BotFilter
         if ( loginRequest.getData().length() > 16 )
         {
             disconnect( bungee.getTranslation( "name_too_long" ) );
@@ -538,6 +546,8 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         ch.addBefore( PipelineUtils.FRAME_DECODER, PipelineUtils.DECRYPT_HANDLER, new CipherDecoder( decrypt ) );
         BungeeCipher encrypt = EncryptionUtil.getCipher( true, sharedKey );
         ch.addBefore( PipelineUtils.FRAME_PREPENDER, PipelineUtils.ENCRYPT_HANDLER, new CipherEncoder( encrypt ) );
+        // disable use of composite buffers if we use natives
+        ch.updateComposite();
 
         String encName = URLEncoder.encode( InitialHandler.this.getName(), "UTF-8" );
 
@@ -769,7 +779,20 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     @Override
     public void handle(LoginPayloadResponse response) throws Exception
     {
-        disconnect( "Unexpected custom LoginPayloadResponse" );
+        CompletableFuture<byte[]> future;
+        synchronized ( requestedLoginPayloads )
+        {
+            future = requestedLoginPayloads.remove( response.getId() );
+        }
+        Preconditions.checkState( future != null, "Unexpected custom LoginPayloadResponse" );
+        future.complete( response.getData() );
+    }
+
+    @Override
+    public void handle(LoginAcknowledged loginAcknowledged) throws Exception
+    {
+        // this packet should only be sent after the login success (it should be handled in the UpstreamBridge)
+        disconnect( "Unexpected LoginAcknowledged" );
     }
 
     @Override
@@ -798,6 +821,10 @@ public class InitialHandler extends PacketHandler implements PendingConnection
 
             throw CancelSendSignal.INSTANCE;
         }
+
+        // if there is no userCon we can't have a connection to a backend server that could have requested this cookie
+        // which means that this cookie is invalid as the proxy also has not requested it
+        Preconditions.checkState( userCon != null, "not requested cookie received" );
     }
 
     @Override
@@ -971,6 +998,24 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         }
         unsafe.sendPacket( new CookieRequest( cookie ) );
 
+        return future;
+    }
+
+    @Override
+    public CompletableFuture<byte[]> sendData(String channel, byte[] data)
+    {
+        Preconditions.checkState( getVersion() >= ProtocolConstants.MINECRAFT_1_13, "LoginPayloads are only supported in 1.13 and above" );
+        Preconditions.checkState( loginRequest != null, "Cannot send login data for status or legacy connections" );
+
+        CompletableFuture<byte[]> future = new CompletableFuture<>();
+        final int id;
+        synchronized ( requestedLoginPayloads )
+        {
+            // thread safe loginPayloadId
+            id = loginPayloadId++;
+            requestedLoginPayloads.put( id, future );
+        }
+        unsafe.sendPacket( new LoginPayloadRequest( id, channel, data ) );
         return future;
     }
 }

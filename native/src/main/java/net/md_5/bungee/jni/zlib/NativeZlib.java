@@ -64,7 +64,7 @@ public class NativeZlib implements BungeeZlib
 
             if ( !preallocatedBuffer ) //BotFilter start
             {
-                out.ensureWritable( 8192 );
+                out.ensureWritable( OUTPUT_BUFFER_SIZE );
             } //BotFilter end
 
             int processed;
@@ -83,5 +83,11 @@ public class NativeZlib implements BungeeZlib
         nativeCompress.reset( ctx, compress );
         nativeCompress.consumed = 0;
         nativeCompress.finished = false;
+    }
+
+    @Override
+    public boolean allowComposite()
+    {
+        return false;
     }
 }
