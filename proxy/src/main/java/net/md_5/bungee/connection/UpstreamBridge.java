@@ -36,6 +36,7 @@ import net.md_5.bungee.protocol.packet.CookieResponse;
 import net.md_5.bungee.protocol.packet.FinishConfiguration;
 import net.md_5.bungee.protocol.packet.KeepAlive;
 import net.md_5.bungee.protocol.packet.LoginAcknowledged;
+import net.md_5.bungee.protocol.packet.LoginPayloadResponse;
 import net.md_5.bungee.protocol.packet.PlayerListItem;
 import net.md_5.bungee.protocol.packet.PlayerListItemRemove;
 import net.md_5.bungee.protocol.packet.PluginMessage;
@@ -138,7 +139,8 @@ public class UpstreamBridge extends PacketHandler
             {
                 if ( player.getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_19_3 )
                 {
-                    player.unsafe().sendPacket( newPacket );
+                    // need to queue, because players in config state could receive it
+                    ( (UserConnection) player ).sendPacketQueued( newPacket );
                 } else
                 {
                     player.unsafe().sendPacket( oldPacket );
@@ -427,6 +429,12 @@ public class UpstreamBridge extends PacketHandler
     public void handle(CookieResponse cookieResponse) throws Exception
     {
         con.getPendingConnection().handle( cookieResponse );
+    }
+
+    @Override
+    public void handle(LoginPayloadResponse loginPayloadResponse) throws Exception
+    {
+        con.getPendingConnection().handle( loginPayloadResponse );
     }
 
     @Override
