@@ -30,20 +30,38 @@ public class PlayerPositionAndLook extends DefinedPacket
     @Override
     public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
     {
-        buf.writeDouble( this.x );
-        buf.writeDouble( this.y );
-        buf.writeDouble( this.z );
-        buf.writeFloat( this.yaw );
-        buf.writeFloat( this.pitch );
-        buf.writeByte( 0x00 );
-        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_9 )
+
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_2 )
         {
-            PlayerPositionAndLook.writeVarInt( teleportId, buf );
-        }
-        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_17 && protocolVersion <= ProtocolConstants.MINECRAFT_1_19_3 )
+            DefinedPacket.writeVarInt( teleportId, buf );
+            buf.writeDouble( this.x );
+            buf.writeDouble( this.y );
+            buf.writeDouble( this.z );
+            buf.writeDouble( 0 ); //velocity x
+            buf.writeDouble( 0 ); //velocity y
+            buf.writeDouble( 0 ); //velocity z
+            buf.writeFloat( this.yaw );
+            buf.writeFloat( this.pitch );
+            buf.writeInt( 0 );//teleport flags
+        } else
         {
-            buf.writeBoolean( true ); // Dismount Vehicle
+            buf.writeDouble( this.x );
+            buf.writeDouble( this.y );
+            buf.writeDouble( this.z );
+            buf.writeFloat( this.yaw );
+            buf.writeFloat( this.pitch );
+            buf.writeByte( 0x00 );
+            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_9 )
+            {
+                PlayerPositionAndLook.writeVarInt( teleportId, buf );
+            }
+            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_17 && protocolVersion <= ProtocolConstants.MINECRAFT_1_19_3 )
+            {
+                buf.writeBoolean( true ); // Dismount Vehicle
+            }
         }
+
+
     }
 
     @Override
@@ -54,7 +72,13 @@ public class PlayerPositionAndLook extends DefinedPacket
         this.z = buf.readDouble();
         this.yaw = buf.readFloat();
         this.pitch = buf.readFloat();
-        this.onGround = buf.readBoolean();
+        if (protocolVersion < ProtocolConstants.MINECRAFT_1_21_2)
+        {
+            this.onGround = buf.readBoolean();
+        } else {
+            short flags = buf.readUnsignedByte();
+            this.onGround = (flags & 1) != 0;
+        }
     }
 
     @Override

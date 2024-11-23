@@ -35,6 +35,7 @@ public class Dimension
     static CompoundTag damageType;
     static CompoundTag damageType1_20;
     static CompoundTag damageType1_21;
+    static CompoundTag damageType1_21_2;
 
     static
     {
@@ -47,22 +48,59 @@ public class Dimension
             damageType1_21 = (CompoundTag) CompoundTag.read(
                 new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.20.nbt" ) ) ) ) ).get( "" );
 
-            ListTag list = damageType1_21.get( "value" ).asList();
-            CompoundTag campfire = new CompoundTag();
-            campfire.add( "name", new StringTag( "minecraft:campfire" ));
-            campfire.add( "id", new IntTag( 44 ));
+            damageType1_21_2 = (CompoundTag) CompoundTag.read(
+                new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.20.nbt" ) ) ) ) ).get( "" );
 
-            CompoundTag element = new CompoundTag();
-            element.add("scaling", new StringTag( "when_caused_by_living_non_player" ));
-            element.add("message_id", new StringTag( "inFire" ));
-            element.add("exhaustion", new FloatTag( 0.1f ));
-            campfire.add( "element", element );
-            list.add( campfire );
+
+            appendElementsDamageType( damageType1_21, ProtocolConstants.MINECRAFT_1_21 );
+            appendElementsDamageType( damageType1_21_2, ProtocolConstants.MINECRAFT_1_21_2 );
+
         } catch ( IOException e )
         {
             throw new RuntimeException( e );
         }
     }
+
+    private static void appendElementsDamageType(CompoundTag compoundTag, int version) {
+        ListTag list = compoundTag.get( "value" ).asList();
+        CompoundTag campfire = new CompoundTag();
+        campfire.add( "name", new StringTag( "minecraft:campfire" ));
+        campfire.add( "id", new IntTag( 44 ));
+
+        CompoundTag campfireData = new CompoundTag();
+        campfireData.add("scaling", new StringTag( "when_caused_by_living_non_player" ));
+        campfireData.add("message_id", new StringTag( "inFire" ));
+        campfireData.add("exhaustion", new FloatTag( 0.1f ));
+        campfire.add( "element", campfireData );
+        list.add( campfire );
+
+        if ( version >= ProtocolConstants.MINECRAFT_1_21_2 )
+        {
+            CompoundTag enderpearl = new CompoundTag();
+            enderpearl.add( "name", new StringTag( "minecraft:ender_pearl" ) );
+            enderpearl.add( "id", new IntTag( 45 ) );
+
+            CompoundTag maceSmash = new CompoundTag();
+            maceSmash.add( "name", new StringTag( "minecraft:mace_smash" ) );
+            maceSmash.add( "id", new IntTag( 46 ) );
+
+            CompoundTag enderpearlData = new CompoundTag();
+            enderpearlData.add( "scaling", new StringTag( "when_caused_by_living_non_player" ) );
+            enderpearlData.add( "message_id", new StringTag( "fall" ) );
+            enderpearlData.add( "exhaustion", new FloatTag( 0.0f ) );
+
+            CompoundTag maceSmashData = new CompoundTag();
+            maceSmashData.add( "scaling", new StringTag( "when_caused_by_living_non_player" ) );
+            maceSmashData.add( "message_id", new StringTag( "mace_smash" ) );
+            maceSmashData.add( "exhaustion", new FloatTag( 0.1f ) );
+
+            enderpearl.add( "element", enderpearlData );
+            maceSmash.add( "element", maceSmashData );
+            list.add( enderpearl );
+            list.add( maceSmash );
+        }
+    }
+
 
     public static Dimension OVERWORLD = new Dimension( "minecraft:overworld", 0, 0, false, true, 0.0f,
         "minecraft:infiniburn_overworld", false, true, true,
@@ -135,8 +173,11 @@ public class Dimension
 
             CompoundTag damage =  protocolVersion >= ProtocolConstants.MINECRAFT_1_20 ? damageType1_20 : damageType;
 
-            if (protocolVersion >= ProtocolConstants.MINECRAFT_1_21) {
+            if (protocolVersion == ProtocolConstants.MINECRAFT_1_21) {
                 damage = damageType1_21;
+            }
+            if (protocolVersion >= ProtocolConstants.MINECRAFT_1_21_2) {
+                damage = damageType1_21_2;
             }
 
 

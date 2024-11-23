@@ -21,7 +21,13 @@ public class Player extends DefinedPacket
     @Override
     public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
     {
-        this.onGround = buf.readBoolean();
+        if (protocolVersion < ProtocolConstants.MINECRAFT_1_21_2)
+        {
+            this.onGround = buf.readBoolean();
+        } else {
+            short flags = buf.readUnsignedByte();
+            this.onGround = (flags & 1) != 0;
+        }
     }
 
     @Override

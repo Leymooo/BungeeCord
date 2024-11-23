@@ -51,8 +51,6 @@ public class Connector extends MoveHandler
     private final BotFilter botFilter;
     private final String name;
     private final String ip;
-    @Getter
-    private final int version;
     private final ThreadLocalRandom random = ThreadLocalRandom.current();
     @Getter
     private UserConnection userConnection;
@@ -73,12 +71,14 @@ public class Connector extends MoveHandler
 
     public Connector(UserConnection userConnection, BotFilter botFilter)
     {
+
+        super(userConnection.getPendingConnection().getVersion());
+
         this.botFilter = botFilter;
         this.state = this.botFilter.getCurrentCheckState();
         this.name = userConnection.getName();
         this.channel = userConnection.getCh().getHandle();
         this.userConnection = userConnection;
-        this.version = userConnection.getPendingConnection().getVersion();
         this.userConnection.setClientEntityId( PacketUtils.CLIENTID );
         this.userConnection.setDimension( 0 );
         this.ip = IPUtils.getAddress( this.userConnection ).getHostAddress();

@@ -39,3 +39,6 @@ manifest.mf
 */src/main/lombok
 
 fonts/
+BotFilter/
+config.yml
+proxy.log.*

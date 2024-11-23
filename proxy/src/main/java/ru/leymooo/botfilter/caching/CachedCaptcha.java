@@ -26,6 +26,7 @@ public class CachedCaptcha
     private static final int PACKETID_1194 = 0x29;
     private static final int PACKETID_1202 = 0x2A;
     private static final int PACKETID_1205 = 0x2C;
+    private static final int PACKETID_1212 = 0x2D;
 
 
     private static final Random random = new Random();
@@ -51,8 +52,9 @@ public class CachedCaptcha
         ByteBuf byteBuf1194 = PacketUtils.createPacket( map, PACKETID_1194, ProtocolConstants.MINECRAFT_1_19_4 );
         ByteBuf byteBuf1202 = PacketUtils.createPacket( map, PACKETID_1202, ProtocolConstants.MINECRAFT_1_20_2 );
         ByteBuf byteBuf1205 = PacketUtils.createPacket( map, PACKETID_1205, ProtocolConstants.MINECRAFT_1_20_5 );
+        ByteBuf byteBuf1212 = PacketUtils.createPacket( map, PACKETID_1212, ProtocolConstants.MINECRAFT_1_21_2 );
 
-        captchas[counter.getAndIncrement()] = new CaptchaHolder( answer, byteBuf18, byteBuf19, byteBuf113, byteBuf114And116, byteBuf115, byteBuf1162, byteBuf117, byteBuf119, byteBuf1191, byteBuf1193, byteBuf1194, byteBuf1202, byteBuf1205 );
+        captchas[counter.getAndIncrement()] = new CaptchaHolder( answer, byteBuf18, byteBuf19, byteBuf113, byteBuf114And116, byteBuf115, byteBuf1162, byteBuf117, byteBuf119, byteBuf1191, byteBuf1193, byteBuf1194, byteBuf1202, byteBuf1205, byteBuf1212 );
 
         //TODO: Do something with this shit.
     }
@@ -69,7 +71,7 @@ public class CachedCaptcha
         private final String answer;
         //now its not funny
         //ну и кринж...
-        private final ByteBuf buf18, buf19, buf113, buf114And116, buf115, buf1162, buf117, buf119, buf1191, buf1193, buf1194,buf1202,buf1205;
+        private final ByteBuf buf18, buf19, buf113, buf114And116, buf115, buf1162, buf117, buf119, buf1191, buf1193, buf1194,buf1202,buf1205,buf1212;
 
         public void write(Channel channel, int version, boolean flush)
         {
@@ -116,6 +118,9 @@ public class CachedCaptcha
             } else if ( version <= ProtocolConstants.MINECRAFT_1_21 )
             {
                 channel.write( buf1205.retainedDuplicate(), channel.voidPromise() );
+            } else if ( version <= ProtocolConstants.MINECRAFT_1_21_2 )
+            {
+                channel.write( buf1212.retainedDuplicate(), channel.voidPromise() );
             } else
             {
                 throw new IllegalArgumentException( "version not found: " + version );

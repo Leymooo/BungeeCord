@@ -175,6 +175,11 @@ public class JoinGame extends DefinedPacket
             writeVarInt( 0, buf ); //portal cooldown
         }
 
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_2 )
+        {
+            writeVarInt( 60, buf ); //sea level
+        }
+
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_20_5 )
         {
             buf.writeBoolean( false ); //secure profile

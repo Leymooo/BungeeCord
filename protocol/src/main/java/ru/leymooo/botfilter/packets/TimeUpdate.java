@@ -24,6 +24,10 @@ public class TimeUpdate extends DefinedPacket
     {
         buf.writeLong( age );
         buf.writeLong( time );
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_2 )
+        {
+            buf.writeBoolean( false ); //time of day increasing
+        }
     }
 
     @Override

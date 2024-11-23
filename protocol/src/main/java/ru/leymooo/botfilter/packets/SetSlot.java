@@ -29,8 +29,13 @@ public class SetSlot extends DefinedPacket
     @Override
     public void write(ByteBuf buf, ProtocolConstants.Direction direction, int version)
     {
-        buf.writeByte( this.windowId );
-
+        if ( version >= ProtocolConstants.MINECRAFT_1_21_2 )
+        {
+            DefinedPacket.writeVarInt( this.windowId, buf );
+        } else
+        {
+            buf.writeByte( this.windowId );
+        }
         if ( version >= ProtocolConstants.MINECRAFT_1_17_1 )
         {
             DefinedPacket.writeVarInt( 0, buf );
@@ -96,11 +101,18 @@ public class SetSlot extends DefinedPacket
             {
                 if ( isMap )
                 {
-                    DefinedPacket.writeVarInt( 1, buf );
-                    DefinedPacket.writeVarInt( 0, buf );
+                    DefinedPacket.writeVarInt( 1, buf ); //added components
+                    DefinedPacket.writeVarInt( 0, buf ); //removed components
 
-                    DefinedPacket.writeVarInt( 26, buf );
-                    DefinedPacket.writeVarInt( 0, buf );
+                    if ( version < ProtocolConstants.MINECRAFT_1_21_2 )
+                    {
+                        DefinedPacket.writeVarInt( 26, buf ); //map data component
+                    } else
+                    {
+                        DefinedPacket.writeVarInt( 36, buf ); //map data component
+
+                    }
+                    DefinedPacket.writeVarInt( 0, buf ); //component value
 
 
                 } else

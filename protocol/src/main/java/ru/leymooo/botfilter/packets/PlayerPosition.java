@@ -27,7 +27,13 @@ public class PlayerPosition extends DefinedPacket
         this.x = buf.readDouble();
         this.y = buf.readDouble();
         this.z = buf.readDouble();
-        this.onGround = buf.readBoolean();
+        if (protocolVersion < ProtocolConstants.MINECRAFT_1_21_2)
+        {
+            this.onGround = buf.readBoolean();
+        } else {
+            short flags = buf.readUnsignedByte();
+            this.onGround = (flags & 1) != 0;
+        }
     }
 
     @Override
