@@ -6,8 +6,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
@@ -52,31 +50,17 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.Synchronized;
 import net.md_5.bungee.api.CommandSender;
-import net.md_5.bungee.api.Favicon;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.ReconnectHandler;
-import net.md_5.bungee.api.ServerPing;
 import net.md_5.bungee.api.Title;
 import net.md_5.bungee.api.chat.BaseComponent;
-import net.md_5.bungee.api.chat.ComponentStyle;
-import net.md_5.bungee.api.chat.KeybindComponent;
-import net.md_5.bungee.api.chat.ScoreComponent;
-import net.md_5.bungee.api.chat.SelectorComponent;
 import net.md_5.bungee.api.chat.TextComponent;
-import net.md_5.bungee.api.chat.TranslatableComponent;
 import net.md_5.bungee.api.config.ConfigurationAdapter;
 import net.md_5.bungee.api.config.ListenerInfo;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.plugin.Plugin;
 import net.md_5.bungee.api.plugin.PluginManager;
-import net.md_5.bungee.chat.ComponentSerializer;
-import net.md_5.bungee.chat.ComponentStyleSerializer;
-import net.md_5.bungee.chat.KeybindComponentSerializer;
-import net.md_5.bungee.chat.ScoreComponentSerializer;
-import net.md_5.bungee.chat.SelectorComponentSerializer;
-import net.md_5.bungee.chat.TextComponentSerializer;
-import net.md_5.bungee.chat.TranslatableComponentSerializer;
 import net.md_5.bungee.command.CommandBungee;
 import net.md_5.bungee.command.CommandEnd;
 import net.md_5.bungee.command.CommandIP;
@@ -96,6 +80,7 @@ import net.md_5.bungee.module.ModuleManager;
 import net.md_5.bungee.netty.PipelineUtils;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.ProtocolConstants;
+import net.md_5.bungee.protocol.channel.BungeeChannelInitializer;
 import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.query.RemoteQuery;
 import net.md_5.bungee.scheduler.BungeeScheduler;
@@ -170,16 +155,6 @@ public class BungeeCord extends ProxyServer
     private final ConsoleReader consoleReader;
     @Getter
     private final Logger logger;
-    public final Gson gson = new GsonBuilder()
-            .registerTypeAdapter( BaseComponent.class, new ComponentSerializer() )
-            .registerTypeAdapter( TextComponent.class, new TextComponentSerializer() )
-            .registerTypeAdapter( TranslatableComponent.class, new TranslatableComponentSerializer() )
-            .registerTypeAdapter( KeybindComponent.class, new KeybindComponentSerializer() )
-            .registerTypeAdapter( ScoreComponent.class, new ScoreComponentSerializer() )
-            .registerTypeAdapter( SelectorComponent.class, new SelectorComponentSerializer() )
-            .registerTypeAdapter( ComponentStyle.class, new ComponentStyleSerializer() )
-            .registerTypeAdapter( ServerPing.PlayerInfo.class, new PlayerInfoSerializer() )
-            .registerTypeAdapter( Favicon.class, Favicon.getFaviconTypeAdapter() ).create();
     @Getter
     private ConnectionThrottle connectionThrottle;
     private final ModuleManager moduleManager = new ModuleManager();
@@ -193,13 +168,28 @@ public class BungeeCord extends ProxyServer
 
     {
         // TODO: Proper fallback when we interface the manager
-        registerChannel( "BungeeCord" );
+        registerChannel( PluginMessage.BUNGEE_CHANNEL_LEGACY );
     }
 
     public static BungeeCord getInstance()
     {
         return (BungeeCord) ProxyServer.getInstance();
     }
+
+    private final Unsafe unsafe = new Unsafe()
+    {
+        @Getter
+        @Setter
+        private BungeeChannelInitializer frontendChannelInitializer;
+
+        @Getter
+        @Setter
+        private BungeeChannelInitializer backendChannelInitializer;
+
+        @Getter
+        @Setter
+        private BungeeChannelInitializer serverInfoChannelInitializer;
+    };
 
     @SuppressFBWarnings("DM_DEFAULT_ENCODING")
     public BungeeCord() throws IOException
@@ -385,8 +375,9 @@ public class BungeeCord extends ProxyServer
                     .channel( PipelineUtils.getServerChannel( info.getSocketAddress() ) )
                     .option( ChannelOption.SO_REUSEADDR, true ) // TODO: Move this elsewhere!
                     .childAttr( PipelineUtils.LISTENER, info )
-                    .childHandler( PipelineUtils.SERVER_CHILD )
                     .group( bossEventLoopGroup, workerEventLoopGroup ) //BotFilter //WaterFall backport
+                    .childHandler( unsafe().getFrontendChannelInitializer().getChannelInitializer() )
+                    .group( eventLoops )
                     .localAddress( info.getSocketAddress() )
                     .bind().addListener( listener );
 
@@ -877,5 +868,11 @@ public class BungeeCord extends ProxyServer
     public Title createTitle()
     {
         return new BungeeTitle();
+    }
+
+    @Override
+    public Unsafe unsafe()
+    {
+        return unsafe;
     }
 }

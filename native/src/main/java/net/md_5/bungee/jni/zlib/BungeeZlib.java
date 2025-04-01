@@ -14,7 +14,6 @@ public interface BungeeZlib
 
     void process(ByteBuf in, ByteBuf out) throws DataFormatException;
 
-    void process(ByteBuf in, ByteBuf out, boolean preallocatedBuffer) throws DataFormatException; //BotFilter
     /*
      * This indicates whether the input ByteBuf is allowed to be a CompositeByteBuf.
      * If you need access to a memory address, you should not allow composite buffers.

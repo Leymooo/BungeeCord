@@ -13,7 +13,8 @@ import net.md_5.bungee.api.chat.hover.content.Content;
 import net.md_5.bungee.api.chat.hover.content.Entity;
 import net.md_5.bungee.api.chat.hover.content.Item;
 import net.md_5.bungee.api.chat.hover.content.Text;
-import net.md_5.bungee.chat.ComponentSerializer;
+import net.md_5.bungee.chat.VersionedComponentSerializer;
+import org.jetbrains.annotations.ApiStatus;
 
 @Getter
 @ToString
@@ -34,6 +35,7 @@ public final class HoverEvent
      * Returns whether this hover event is prior to 1.16
      */
     @Setter
+    @ApiStatus.Internal
     private boolean legacy = false;
 
     /**
@@ -80,7 +82,7 @@ public final class HoverEvent
             return (BaseComponent[]) ( (Text) content ).getValue();
         }
 
-        TextComponent component = new TextComponent( ComponentSerializer.toString( content ) );
+        TextComponent component = new TextComponent( VersionedComponentSerializer.getDefault().toString( content ) );
         return new BaseComponent[]
         {
             component

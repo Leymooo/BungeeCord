@@ -7,17 +7,23 @@ import io.netty.handler.codec.CorruptedFrameException;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.haproxy.HAProxyMessage;
 import io.netty.handler.timeout.ReadTimeoutException;
+import io.netty.handler.timeout.WriteTimeoutException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.logging.Level;
+import lombok.Setter;
 import net.md_5.bungee.api.ProxyServer;
+import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.connection.CancelSendSignal;
 import net.md_5.bungee.connection.InitialHandler;
 import net.md_5.bungee.connection.PingHandler;
+import net.md_5.bungee.connection.UpstreamBridge;
 import net.md_5.bungee.protocol.BadPacketException;
 import net.md_5.bungee.protocol.OverflowPacketException;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
+import net.md_5.bungee.protocol.packet.Kick;
+import net.md_5.bungee.util.PacketLimiter;
 import net.md_5.bungee.util.QuietException;
 
 /**
@@ -30,6 +36,8 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
 
     private static final boolean printAllStacktraces = Boolean.getBoolean( "botfilter.printallerrors" ); //BotFilter
 
+    @Setter
+    private PacketLimiter limiter;
     private ChannelWrapper channel;
     private PacketHandler handler;
     private boolean healthCheck;
@@ -83,6 +91,7 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
         }
     }
 
+
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception
     {
@@ -96,9 +105,9 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
                     InetSocketAddress newAddress = new InetSocketAddress( proxy.sourceAddress(), proxy.sourcePort() );
 
                     ProxyServer.getInstance().getLogger().log( Level.FINE, "Set remote address via PROXY {0} -> {1}", new Object[]
-                    {
-                        channel.getRemoteAddress(), newAddress
-                    } );
+                        {
+                            channel.getRemoteAddress(), newAddress
+                        } );
 
                     channel.setRemoteAddress( newAddress );
                 } else
@@ -113,20 +122,35 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
         }
 
         PacketWrapper packet = (PacketWrapper) msg;
-        if ( packet.packet != null )
+        try
         {
-            Protocol nextProtocol = packet.packet.nextProtocol();
-            if ( nextProtocol != null )
-            {
-                channel.setDecodeProtocol( nextProtocol );
-            }
-        }
 
-        if ( handler != null )
-        {
-            boolean sendPacket = handler.shouldHandle( packet );
-            try
+            // check if the player exceeds packet limits, put inside try final, so we always release.
+            if ( limiter != null && !limiter.incrementAndCheck( packet.buf.readableBytes() ) )
             {
+                // we shouldn't tell the player what limits he exceeds by default
+                // but if someone applies custom message we should allow them to display counter and bytes
+                channel.close( handler instanceof UpstreamBridge ? new Kick( TextComponent.fromLegacy( ProxyServer.getInstance().getTranslation( "packet_limit_kick", limiter.getCounter(), limiter.getDataCounter() ) ) ) : null );
+                // but the server admin should know
+                ProxyServer.getInstance().getLogger().log( Level.WARNING, "{0} exceeded packet limit ({1} packets and {2} bytes per second)", new Object[]
+                    {
+                        handler, limiter.getCounter(), limiter.getDataCounter()
+                    } );
+                return;
+            }
+            if ( packet.packet != null )
+            {
+                Protocol nextProtocol = packet.packet.nextProtocol();
+                if ( nextProtocol != null )
+                {
+                    channel.setDecodeProtocol( nextProtocol );
+                }
+            }
+
+            if ( handler != null )
+            {
+                boolean sendPacket = handler.shouldHandle( packet );
+
                 if ( !channel.isClosed() ) //BotFilter Do not handle packets if closed
                 {
                     if ( sendPacket && packet.packet != null )
@@ -144,12 +168,13 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
                         handler.handle( packet );
                     }
                 }
-            } finally
-            {
-                packet.trySingleRelease();
             }
+        } finally
+        {
+            packet.trySingleRelease();
         }
     }
+
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception
@@ -169,6 +194,9 @@ public class HandlerBoss extends ChannelInboundHandlerAdapter
                 if ( cause instanceof ReadTimeoutException )
                 {
                     ProxyServer.getInstance().getLogger().log( Level.WARNING, "{0} - read timed out", handler.toString() ); // BotFilter, use toString() instead of object
+                } else if ( cause instanceof WriteTimeoutException )
+                {
+                    ProxyServer.getInstance().getLogger().log( Level.WARNING, "{0} - write timed out", handler.toString() ); // BotFilter, use toString() instead of object
                 } else if ( cause instanceof DecoderException )
                 {
                     if ( cause instanceof CorruptedFrameException )

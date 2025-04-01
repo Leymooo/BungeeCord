@@ -45,27 +45,21 @@ public class NativeZlib implements BungeeZlib
         nativeCompress.finished = false;
     }
 
-    @Override
-    public void process(ByteBuf in, ByteBuf out) throws DataFormatException
-    {
-        process( in, out, false ); //BotFilter
-    }
 
     @Override
-    public void process(ByteBuf in, ByteBuf out, boolean preallocatedBuffer) throws DataFormatException //BotFilter
+    public void process(ByteBuf in, ByteBuf out) throws DataFormatException //BotFilter
     {
-        // Smoke tests
-        in.memoryAddress();
-        out.memoryAddress();
         Preconditions.checkState( ctx != 0, "Invalid pointer to compress!" );
 
         while ( !nativeCompress.finished && ( compress || in.isReadable() ) )
         {
-
-            if ( !preallocatedBuffer ) //BotFilter start
+            if ( compress )
             {
                 out.ensureWritable( OUTPUT_BUFFER_SIZE );
-            } //BotFilter end
+            } else
+            {
+                Preconditions.checkArgument( out.isWritable(), "Output buffer overrun" );
+            }
 
             int processed;
             try

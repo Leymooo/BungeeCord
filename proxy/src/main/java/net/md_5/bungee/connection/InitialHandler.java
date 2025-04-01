@@ -2,6 +2,7 @@ package net.md_5.bungee.connection;
 
 import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
+import io.netty.channel.EventLoop;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -127,6 +128,12 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         {
             ch.write( packet );
         }
+
+        @Override
+        public void sendPacketQueued(DefinedPacket packet)
+        {
+            throw new UnsupportedOperationException( "Not supported" );
+        }
     };
     @Getter
     private boolean onlineMode = BungeeCord.getInstance().config.isOnlineMode();
@@ -194,12 +201,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     }
 
     @Override
-    public void handle(PluginMessage pluginMessage) throws Exception
-    {
-        this.relayMessage( pluginMessage );
-    }
-
-    @Override
     public void handle(LegacyHandshake legacyHandshake) throws Exception
     {
         checkState( !this.legacy, "Not expecting LegacyHandshake" );
@@ -236,11 +237,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                     @Override
                     public void done(ProxyPingEvent result, Throwable error)
                     {
-                        if ( ch.isClosing() )
-                        {
-                            return;
-                        }
-
                         ServerPing legacy = result.getResponse();
                         String kickMessage;
 
@@ -264,7 +260,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                     }
                 };
 
-                bungee.getPluginManager().callEvent( new ProxyPingEvent( InitialHandler.this, result, callback ) );
+                bungee.getPluginManager().callEvent( new ProxyPingEvent( InitialHandler.this, result, eventLoopCallback( callback ) ) );
             }
         };
 
@@ -317,7 +313,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                     @Override
                     public void done(ProxyPingEvent pingResult, Throwable error)
                     {
-                        Gson gson = BungeeCord.getInstance().gson;
+                        Gson gson = PingHandler.gson;
                         unsafe.sendPacket( new StatusResponse( gson.toJson( pingResult.getResponse() ) ) );
                         if ( bungee.getConnectionThrottle() != null )
                         {
@@ -326,7 +322,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                     }
                 };
 
-                bungee.getPluginManager().callEvent( new ProxyPingEvent( InitialHandler.this, result, callback ) );
+                bungee.getPluginManager().callEvent( new ProxyPingEvent( InitialHandler.this, result, eventLoopCallback( callback ) ) );
             }
         };
 
@@ -503,36 +499,19 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                     disconnect( ( reason != null ) ? reason : TextComponent.fromLegacy( bungee.getTranslation( "kick_message" ) ) );
                     return;
                 }
-                if ( ch.isClosing() )
-                {
-                    return;
-                }
                 if ( onlineMode )
                 {
                     thisState = State.ENCRYPT;
                     unsafe().sendPacket( request = EncryptionUtil.encryptRequest() );
-                //BotFilter start
-                } else if ( isInEventLoop() )
-                {
-                    thisState = State.FINISHING;
-                    finish();
                 } else
                 {
                     thisState = State.FINISHING;
-                    ch.getHandle().eventLoop().execute( () ->
-                    {
-                        if ( !ch.isClosing() )
-                        {
-                            finish();
-                        }
-                    } );
+                    finish();
                 }
-                //BotFilter end
             }
         };
-
         // fire pre login event
-        bungee.getPluginManager().callEvent( new PreLoginEvent( InitialHandler.this, callback ) );
+        bungee.getPluginManager().callEvent( new PreLoginEvent( InitialHandler.this, eventLoopCallback( callback ) ) );
     }
 
     @Override
@@ -545,7 +524,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         BungeeCipher decrypt = EncryptionUtil.getCipher( false, sharedKey );
         ch.addBefore( PipelineUtils.FRAME_DECODER, PipelineUtils.DECRYPT_HANDLER, new CipherDecoder( decrypt ) );
         BungeeCipher encrypt = EncryptionUtil.getCipher( true, sharedKey );
-        ch.addBefore( PipelineUtils.FRAME_PREPENDER, PipelineUtils.ENCRYPT_HANDLER, new CipherEncoder( encrypt ) );
+        ch.addBefore( PipelineUtils.FRAME_PREPENDER_AND_COMPRESS, PipelineUtils.ENCRYPT_HANDLER, new CipherEncoder( encrypt ) );
         // disable use of composite buffers if we use natives
         ch.updateComposite();
 
@@ -567,7 +546,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
             {
                 if ( error == null )
                 {
-                    LoginResult obj = BungeeCord.getInstance().gson.fromJson( result, LoginResult.class );
+                    LoginResult obj = LoginResult.GSON.fromJson( result, LoginResult.class );
                     if ( obj != null && obj.getId() != null )
                     {
                         loginProfile = obj;
@@ -692,22 +671,10 @@ public class InitialHandler extends PacketHandler implements PendingConnection
             }
 
             //BotFilter: Some code moved to finnalyFinishLogin
-            if ( isInEventLoop() )
-            {
-                finnalyFinishLogin( isLoginSuccessSent );
-            } else
-            {
-                ch.getHandle().eventLoop().execute( () ->
-                {
-                    if ( !ch.isClosing() )
-                    {
-                        finnalyFinishLogin( isLoginSuccessSent );
-                    }
-                } );
-            }
+            finnalyFinishLogin( isLoginSuccessSent );
         };
         // fire login event
-        bungee.getPluginManager().callEvent( new LoginEvent( InitialHandler.this, complete ) );
+        bungee.getPluginManager().callEvent( new LoginEvent( InitialHandler.this, eventLoopCallback( complete ) ) );
     }
 
     private void finnalyFinishLogin(boolean isLoginSuccessSent)
@@ -751,18 +718,12 @@ public class InitialHandler extends PacketHandler implements PendingConnection
             @Override
             public void done(PostLoginEvent result, Throwable error)
             {
-                // #3612: Don't progress further if disconnected during event
-                if ( ch.isClosing() )
-                {
-                    return;
-                }
-
                 userCon.connect( result.getTarget(), null, true, ServerConnectEvent.Reason.JOIN_PROXY );
             }
         };
 
         // fire post-login event
-        bungee.getPluginManager().callEvent( new PostLoginEvent( userCon, initialServer, complete ) );
+        bungee.getPluginManager().callEvent( new PostLoginEvent( userCon, initialServer, eventLoopCallback( complete ) ) );
     }
 
     public void sendLoginSuccess()
@@ -770,10 +731,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         unsafe.sendPacket( new LoginSuccess( getRewriteId(), getName(), ( loginProfile == null ) ? null : loginProfile.getProperties() ) );
     }
 
-    private boolean isInEventLoop()
-    {
-        return ch.getHandle().eventLoop().inEventLoop();
-    }
     //BotFilter end
 
     @Override
@@ -786,6 +743,9 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         }
         Preconditions.checkState( future != null, "Unexpected custom LoginPayloadResponse" );
         future.complete( response.getData() );
+
+        // we should never pass this to the backend
+        throw CancelSendSignal.INSTANCE;
     }
 
     @Override
@@ -1017,5 +977,33 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         }
         unsafe.sendPacket( new LoginPayloadRequest( id, channel, data ) );
         return future;
+    }
+
+    // this method is used for event execution
+    // if this connection is disconnected during an event-call, the original callback is not called
+    // if the event was executed async, we execute the callback on the eventloop again
+    // otherwise netty will schedule any pipeline related call by itself, this decreases performance
+    private <T> Callback<T> eventLoopCallback(Callback<T> callback)
+    {
+        return (result, error) ->
+        {
+            EventLoop eventLoop = ch.getHandle().eventLoop();
+            if ( eventLoop.inEventLoop() )
+            {
+                if ( !ch.isClosing() )
+                {
+                    callback.done( result, error );
+                }
+                return;
+            }
+
+            eventLoop.execute( () ->
+            {
+                if ( !ch.isClosing() )
+                {
+                    callback.done( result, error );
+                }
+            } );
+        };
     }
 }
