@@ -1,8 +1,6 @@
 package ru.leymooo.botfilter.packets;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufOutputStream;
-import java.io.IOException;
 import java.util.BitSet;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -21,7 +19,7 @@ import se.llbit.nbt.Tag;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = false, of =
     {
-    "x", "z"
+        "x", "z"
     })
 public class EmptyChunkPacket extends DefinedPacket
 {
@@ -72,7 +70,7 @@ public class EmptyChunkPacket extends DefinedPacket
         }
         if ( version >= ProtocolConstants.MINECRAFT_1_14 )
         {
-            this.write1_14Heightmaps( buf, version );
+            this.writeHeighmaps( buf, version );
             if ( version >= ProtocolConstants.MINECRAFT_1_15 && version < ProtocolConstants.MINECRAFT_1_18 )
             {
                 if ( version >= ProtocolConstants.MINECRAFT_1_16_2 )
@@ -102,11 +100,15 @@ public class EmptyChunkPacket extends DefinedPacket
             writeVarInt( 0, buf ); //1.15 - 1.17.1
         } else
         {
-            byte[] sectionData = new byte[] {0, 0, 0, 0, 0, 0, 1, 0};
-            writeVarInt( sectionData.length * 16, buf );
+            byte[] sectionData = new byte[] { 0, 0, 0, 0, 0, 0, 1, 0 };
+            byte[] sectionData1215 = new byte[] { 0, 0, 0, 0, 0, 1};
+
+            byte[] currentData = version < ProtocolConstants.MINECRAFT_1_21_5 ? sectionData : sectionData1215;
+
+            writeVarInt( currentData.length * 16, buf );
             for ( int i = 0; i < 16; i++ )
             {
-                buf.writeBytes( sectionData );
+                buf.writeBytes( currentData );
             }
         }
         if ( version >= ProtocolConstants.MINECRAFT_1_9_4 )
@@ -116,7 +118,7 @@ public class EmptyChunkPacket extends DefinedPacket
 
         if ( version >= ProtocolConstants.MINECRAFT_1_18 ) //light data
         {
-            byte[] lightData = new byte[] {1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, -1, -1, 0, 0};
+            byte[] lightData = new byte[] { 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, -1, -1, 0, 0 };
             buf.ensureWritable( lightData.length );
             if ( version >= ProtocolConstants.MINECRAFT_1_20 )
             {
@@ -134,13 +136,26 @@ public class EmptyChunkPacket extends DefinedPacket
     {
     }
 
-    private void write1_14Heightmaps(ByteBuf buf, int version)
+    private void writeHeighmaps(ByteBuf buf, int version)
     {
         long[] longArrayTag = new long[version < ProtocolConstants.MINECRAFT_1_18 ? 36 : 37];
-        CompoundTag compoundTag = new CompoundTag();
-        compoundTag.add( "MOTION_BLOCKING", new LongArrayTag( longArrayTag ) );
-        Tag write = version >= ProtocolConstants.MINECRAFT_1_20_2 ? compoundTag : new NamedTag( "", compoundTag );
-        writeTag( write, buf, version );
+
+        if ( version < ProtocolConstants.MINECRAFT_1_21_5 )
+        {
+            CompoundTag compoundTag = new CompoundTag();
+            compoundTag.add( "MOTION_BLOCKING", new LongArrayTag( longArrayTag ) );
+            Tag write = version >= ProtocolConstants.MINECRAFT_1_20_2 ? compoundTag : new NamedTag( "", compoundTag );
+            writeTag( write, buf, version );
+        } else
+        {
+            writeVarInt( 1, buf ); //Map Size
+            writeVarInt( 4, buf ); //Motion blocking key
+            writeVarInt( longArrayTag.length, buf );
+            for ( long l : longArrayTag )
+            {
+                buf.writeLong( l );
+            }
+        }
 
     }
 }

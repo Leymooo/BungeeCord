@@ -32,6 +32,18 @@ import se.llbit.nbt.Tag;
 @Getter
 public class Dimension
 {
+    public static Dimension OVERWORLD = new Dimension( "minecraft:overworld", 0, 0, false, true, 0.0f,
+        "minecraft:infiniburn_overworld", false, true, true,
+        "minecraft:overworld", true, 0, 0,
+        256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.PLAINS, Biome.SWAMP, Biome.SWAMP_HILLS ) );
+    public static Dimension THE_NETHER = new Dimension( "minecraft:the_nether", -1, 1, false, true, 0.0f,
+        "minecraft:infiniburn_nether", false, true, true,
+        "minecraft:the_nether", true, 0, 0,
+        256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.NETHER_WASTES ) );
+    public static Dimension THE_END = new Dimension( "minecraft:the_end", 1, 2, false, true, 0.0f,
+        "minecraft:infiniburn_end", false, true, true,
+        "minecraft:the_end", true, 0, 0,
+        256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.THE_END ) );
     static CompoundTag damageType;
     static CompoundTag damageType1_20;
     static CompoundTag damageType1_21;
@@ -61,16 +73,39 @@ public class Dimension
         }
     }
 
-    private static void appendElementsDamageType(CompoundTag compoundTag, int version) {
+    private final String key;
+    private final int dimensionId;
+    private final int id;
+    private final boolean piglinSafe;
+    private final boolean natural;
+    private final float ambientLight;
+    private final String infiniburn;
+    private final boolean respawnAnchorWorks;
+    private final boolean hasSkylight;
+    private final boolean bedWorks;
+    private final String effects;
+    private final boolean hasRaids;
+    private final int monster_spawn_light_level;
+    private final int monster_spawn_block_light_limit;
+    private final int logicalHeight;
+    private final float coordinateScale;
+    private final boolean ultrawarm;
+    private final boolean hasCeiling;
+    private final int minY;
+    private final int height;
+    private final List<Biome> biomes;
+
+    private static void appendElementsDamageType(CompoundTag compoundTag, int version)
+    {
         ListTag list = compoundTag.get( "value" ).asList();
         CompoundTag campfire = new CompoundTag();
-        campfire.add( "name", new StringTag( "minecraft:campfire" ));
-        campfire.add( "id", new IntTag( 44 ));
+        campfire.add( "name", new StringTag( "minecraft:campfire" ) );
+        campfire.add( "id", new IntTag( 44 ) );
 
         CompoundTag campfireData = new CompoundTag();
-        campfireData.add("scaling", new StringTag( "when_caused_by_living_non_player" ));
-        campfireData.add("message_id", new StringTag( "inFire" ));
-        campfireData.add("exhaustion", new FloatTag( 0.1f ));
+        campfireData.add( "scaling", new StringTag( "when_caused_by_living_non_player" ) );
+        campfireData.add( "message_id", new StringTag( "inFire" ) );
+        campfireData.add( "exhaustion", new FloatTag( 0.1f ) );
         campfire.add( "element", campfireData );
         list.add( campfire );
 
@@ -100,46 +135,6 @@ public class Dimension
             list.add( maceSmash );
         }
     }
-
-
-    public static Dimension OVERWORLD = new Dimension( "minecraft:overworld", 0, 0, false, true, 0.0f,
-        "minecraft:infiniburn_overworld", false, true, true,
-        "minecraft:overworld", true, 0, 0,
-        256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.PLAINS, Biome.SWAMP, Biome.SWAMP_HILLS ) );
-    public static Dimension THE_NETHER = new Dimension( "minecraft:the_nether", -1, 1, false, true, 0.0f,
-        "minecraft:infiniburn_nether", false, true, true,
-        "minecraft:the_nether", true, 0, 0,
-        256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.NETHER_WASTES ) );
-    public static Dimension THE_END = new Dimension( "minecraft:the_end", 1, 2, false, true, 0.0f,
-        "minecraft:infiniburn_end", false, true, true,
-        "minecraft:the_end", true, 0, 0,
-        256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.THE_END ) );
-    private final String key;
-    private final int dimensionId;
-    private final int id;
-
-    private final boolean piglinSafe;
-
-    private final boolean natural;
-    private final float ambientLight;
-
-    private final String infiniburn;
-    private final boolean respawnAnchorWorks;
-    private final boolean hasSkylight;
-    private final boolean bedWorks;
-    private final String effects;
-    private final boolean hasRaids;
-    private final int monster_spawn_light_level;
-    private final int monster_spawn_block_light_limit;
-    private final int logicalHeight;
-    private final float coordinateScale;
-    private final boolean ultrawarm;
-    private final boolean hasCeiling;
-
-    private final int minY;
-    private final int height;
-
-    private final List<Biome> biomes;
 
     @SneakyThrows
     public Tag getFullCodec(int protocolVersion)
@@ -171,17 +166,19 @@ public class Dimension
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_19_4 )
         {
 
-            CompoundTag damage =  protocolVersion >= ProtocolConstants.MINECRAFT_1_20 ? damageType1_20 : damageType;
+            CompoundTag damage = protocolVersion >= ProtocolConstants.MINECRAFT_1_20 ? damageType1_20 : damageType;
 
-            if (protocolVersion == ProtocolConstants.MINECRAFT_1_21) {
+            if ( protocolVersion == ProtocolConstants.MINECRAFT_1_21 )
+            {
                 damage = damageType1_21;
             }
-            if (protocolVersion >= ProtocolConstants.MINECRAFT_1_21_2) {
+            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_2 )
+            {
                 damage = damageType1_21_2;
             }
 
 
-            root.add( "minecraft:damage_type",  damage);
+            root.add( "minecraft:damage_type", damage );
         }
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_19 )
         {
@@ -191,6 +188,16 @@ public class Dimension
         {
             root.add( "minecraft:painting_variant", createPaintingVariant( protocolVersion ) );
             root.add( "minecraft:wolf_variant", createWoldVariant( protocolVersion ) );
+        }
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_5 )
+        {
+            root.add( "minecraft:frog_variant", createEntityVariant( protocolVersion, "minecraft:frog_variant", "frog", true, "warm" ) );
+            root.add( "minecraft:cat_variant", createEntityVariant( protocolVersion, "minecraft:cat_variant", "cat", false, "black" ) );
+            root.add( "minecraft:pig_variant", createEntityVariant( protocolVersion, "minecraft:pig_variant", "pig", true, "temperate" ) );
+            root.add( "minecraft:cow_variant", createEntityVariant( protocolVersion, "minecraft:cow_variant", "cow", true, "temperate" ) );
+            root.add( "minecraft:minecraft:chicken_variant", createEntityVariant( protocolVersion, "minecraft:chicken_variant", "chicken", true, "temperate" ) );
+            root.add( "minecraft:wolf_sound_variant", createWoldSoundVariant( protocolVersion ) );
+
         }
 
         return protocolVersion >= ProtocolConstants.MINECRAFT_1_20_2 ? root : new NamedTag( "", root );
@@ -316,9 +323,9 @@ public class Dimension
         alban.add( "id", new IntTag( 0 ) );
 
         CompoundTag paintingVariant = new CompoundTag();
-        paintingVariant.add("width", new IntTag( 1 ));
-        paintingVariant.add("height", new IntTag( 1 ));
-        paintingVariant.add("asset_id", new StringTag( "minecraft:alban" ));
+        paintingVariant.add( "width", new IntTag( 1 ) );
+        paintingVariant.add( "height", new IntTag( 1 ) );
+        paintingVariant.add( "asset_id", new StringTag( "minecraft:alban" ) );
 
         alban.add( "element", paintingVariant );
 
@@ -336,14 +343,77 @@ public class Dimension
         ashen.add( "id", new IntTag( 0 ) );
 
         CompoundTag ashenProperties = new CompoundTag();
-        ashenProperties.add("wild_texture", new StringTag( "minecraft:entity/wolf/wolf_ashen" ));
-        ashenProperties.add("tame_texture", new StringTag( "minecraft:entity/wolf/wolf_ashen_tame" ));
-        ashenProperties.add("angry_texture", new StringTag( "minecraft:entity/wolf/wolf_ashen_angry" ));
-        ashenProperties.add("biomes", new ListTag(Tag.TAG_STRING, Arrays.asList( new StringTag( "minecraft:plains" ) ) ));
+        if ( version < ProtocolConstants.MINECRAFT_1_21_5 )
+        {
+            ashenProperties.add( "wild_texture", new StringTag( "minecraft:entity/wolf/wolf_ashen" ) );
+            ashenProperties.add( "tame_texture", new StringTag( "minecraft:entity/wolf/wolf_ashen_tame" ) );
+            ashenProperties.add( "angry_texture", new StringTag( "minecraft:entity/wolf/wolf_ashen_angry" ) );
+            ashenProperties.add( "biomes", new ListTag( Tag.TAG_STRING, Arrays.asList( new StringTag( "minecraft:plains" ) ) ) );
+        } else
+        {
+            CompoundTag assets = new CompoundTag();
+            assets.add( "wild", new StringTag( "minecraft:entity/wolf/wolf_ashen" ) );
+            assets.add( "tame", new StringTag( "minecraft:entity/wolf/wolf_ashen_tame" ) );
+            assets.add( "angry", new StringTag( "minecraft:entity/wolf/wolf_ashen_angry" ) );
+            ashenProperties.add( "assets", assets );
+        }
 
         ashen.add( "element", ashenProperties );
 
         root.add( "value", new ListTag( Tag.TAG_COMPOUND, Arrays.asList( ashen ) ) );
+        return root;
+    }
+
+
+    private CompoundTag createEntityVariant(int version, String type, String entityName, boolean suffixedWithOwnName, String... entries)
+    {
+        CompoundTag root = new CompoundTag();
+        root.add( "type", new StringTag( type ) );
+
+        List<CompoundTag> values = new ArrayList<>();
+        for ( String entity : entries )
+        {
+            CompoundTag element = new CompoundTag();
+            String assetId = "entity/" + entityName + "/" + entity;
+            if ( suffixedWithOwnName )
+            {
+                // Because frogs have that...
+                assetId = assetId + "_" + entityName;
+            }
+            element.add( "asset_id", new StringTag( assetId ) );
+
+
+            CompoundTag variant = new CompoundTag();
+            variant.add( "name", new StringTag( "minecraft:" + entity ) );
+            variant.add( "id", new IntTag( values.size() ) );
+            variant.add( "element", element );
+            values.add( variant );
+        }
+        root.add( "value", new ListTag( Tag.TAG_COMPOUND, values ) );
+        return root;
+    }
+
+    private CompoundTag createWoldSoundVariant(int version)
+    {
+        CompoundTag root = new CompoundTag();
+        root.add( "type", new StringTag( "minecraft:wolf_sound_variant" ) );
+        CompoundTag angrySound = new CompoundTag();
+        angrySound.add( "name", new StringTag( "minecraft:angry" ) );
+        angrySound.add( "id", new IntTag( 0 ) );
+
+        CompoundTag angrySoundVariant = new CompoundTag();
+
+        angrySoundVariant.add( "ambient_sound", new StringTag( "minecraft:entity.wolf_angry.ambient" ) );
+        angrySoundVariant.add( "death_sound", new StringTag( "minecraft:entity.wolf_angry.death" ) );
+        angrySoundVariant.add( "growl_sound", new StringTag( "minecraft:entity.wolf_angry.growl" ) );
+        angrySoundVariant.add( "hurt_sound", new StringTag( "minecraft:entity.wolf_angry.hurt" ) );
+        angrySoundVariant.add( "pant_sound", new StringTag( "minecraft:entity.wolf_angry.pant" ) );
+        angrySoundVariant.add( "whine_sound", new StringTag( "minecraft:entity.wolf_angry.whine" ) );
+
+
+        angrySound.add( "element", angrySoundVariant );
+
+        root.add( "value", new ListTag( Tag.TAG_COMPOUND, Arrays.asList( angrySound ) ) );
         return root;
     }
 

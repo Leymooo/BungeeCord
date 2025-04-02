@@ -176,11 +176,6 @@ public class BotFilter
             userConnection.disconnect( BungeeCord.getInstance().getTranslation( "already_connected_proxy" ) ); // TODO: Cache this disconnect packet
         } else
         {
-            PacketDecompressor packetDecompressor = userConnection.getCh().getHandle().pipeline().get( PacketDecompressor.class );
-            if ( packetDecompressor != null )
-            {
-                packetDecompressor.checking = true;
-            }
             userConnection.getCh().getHandle().pipeline().get( HandlerBoss.class ).setHandler( connector );
 
             userConnection.getPendingConnection().sendLoginSuccess();

@@ -198,11 +198,6 @@ public class Connector extends MoveHandler
         botFilter.removeConnection( null, this );
         sendMessage( PacketsPosition.CHECK_SUS_MSG );
         botFilter.saveUser( getName(), IPUtils.getAddress( userConnection ), true );
-        PacketDecompressor packetDecompressor = channel.pipeline().get( PacketDecompressor.class );
-        if ( packetDecompressor != null )
-        {
-            packetDecompressor.checking = false;
-        }
         userConnection.setNeedLogin( false );
         userConnection.getCh().setProtocol( Protocol.GAME );
         userConnection.getPendingConnection().finishLoginWithLoginEvent( true );

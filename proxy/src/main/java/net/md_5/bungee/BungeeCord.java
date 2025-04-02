@@ -377,7 +377,6 @@ public class BungeeCord extends ProxyServer
                     .childAttr( PipelineUtils.LISTENER, info )
                     .group( bossEventLoopGroup, workerEventLoopGroup ) //BotFilter //WaterFall backport
                     .childHandler( unsafe().getFrontendChannelInitializer().getChannelInitializer() )
-                    .group( eventLoops )
                     .localAddress( info.getSocketAddress() )
                     .bind().addListener( listener );
 
