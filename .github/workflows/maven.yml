@@ -29,5 +29,5 @@ jobs:
     - run: mvn --activate-profiles dist --no-transfer-progress package
     - uses: actions/upload-artifact@v4
       with:
-        name: BungeeCord
+        name: BungeeCord-Java-${{ matrix.java }}
         path: bootstrap/target/BungeeCord.jar
