@@ -19,7 +19,7 @@ jobs:
       with:
         distribution: 'temurin'
         java-version: ${{ matrix.java }}
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
@@ -27,7 +27,7 @@ jobs:
           ${{ runner.os }}-maven-
     - run: java -version && mvn --version
     - run: mvn --activate-profiles dist --no-transfer-progress package
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       with:
-        name: BungeeCord
+        name: BungeeCord-Java-${{ matrix.java }}
         path: bootstrap/target/BungeeCord.jar
