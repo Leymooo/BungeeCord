@@ -2,7 +2,7 @@ package net.md_5.bungee.connection;
 
 import com.google.common.base.Preconditions;
 import com.google.gson.Gson;
-import io.netty.channel.EventLoop;
+import io.netty.buffer.Unpooled;
 import java.math.BigInteger;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -103,6 +103,8 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     private EncryptionRequest request;
     @Getter
     private PluginMessage brandMessage;
+    @Getter
+    private String clientBrand;
     @Getter
     private final Set<String> registeredChannels = new HashSet<>();
     private State thisState = State.HANDSHAKE;
@@ -292,6 +294,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     public void handle(StatusRequest statusRequest) throws Exception
     {
         checkState( thisState == State.STATUS, "Not expecting STATUS" ); //BotFilter
+        thisState = null; // don't accept multiple status requests and set state to ping in async event callback
 
         ServerInfo forced = AbstractReconnectHandler.getForcedHost( this );
         final String motd = ( forced != null ) ? forced.getMotd() : listener.getMotd();
@@ -315,10 +318,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
                     {
                         Gson gson = PingHandler.gson;
                         unsafe.sendPacket( new StatusResponse( gson.toJson( pingResult.getResponse() ) ) );
-                        if ( bungee.getConnectionThrottle() != null )
-                        {
-                            bungee.getConnectionThrottle().unthrottle( getSocketAddress() );
-                        }
+                        thisState = State.PING;
                     }
                 };
 
@@ -333,8 +333,6 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         {
             pingBack.done( getPingInfo( motd, protocol ), null );
         }
-
-        thisState = State.PING;
     }
 
     @Override
@@ -343,6 +341,10 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         checkState( thisState == State.PING, "Not expecting PING" ); //BotFilter
         unsafe.sendPacket( ping );
         disconnect( "" );
+        if ( bungee.getConnectionThrottle() != null )
+        {
+            bungee.getConnectionThrottle().unthrottle( getSocketAddress() );
+        }
     }
 
     @Override
@@ -934,6 +936,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
         } else if ( input.getTag().equals( "MC|Brand" ) || input.getTag().equals( "minecraft:brand" ) )
         {
             brandMessage = input;
+            clientBrand = DefinedPacket.readString( Unpooled.wrappedBuffer( input.getData() ) );
             return true; //BotFilter
         }
         return false; //BotFilter
@@ -987,17 +990,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
     {
         return (result, error) ->
         {
-            EventLoop eventLoop = ch.getHandle().eventLoop();
-            if ( eventLoop.inEventLoop() )
-            {
-                if ( !ch.isClosing() )
-                {
-                    callback.done( result, error );
-                }
-                return;
-            }
-
-            eventLoop.execute( () ->
+            ch.scheduleIfNecessary( () ->
             {
                 if ( !ch.isClosing() )
                 {

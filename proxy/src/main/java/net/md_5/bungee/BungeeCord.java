@@ -6,7 +6,6 @@ import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelException;
@@ -45,7 +44,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jline.console.ConsoleReader;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.Synchronized;
@@ -73,6 +71,7 @@ import net.md_5.bungee.compress.CompressFactory;
 import net.md_5.bungee.conf.Configuration;
 import net.md_5.bungee.conf.YamlConfig;
 import net.md_5.bungee.forge.ForgeConstants;
+import net.md_5.bungee.jni.NativeCode;
 import net.md_5.bungee.log.BungeeLogger;
 import net.md_5.bungee.log.LoggingForwardHandler;
 import net.md_5.bungee.log.LoggingOutputStream;
@@ -92,6 +91,11 @@ import ru.leymooo.botfilter.BotFilterCommand;
 import ru.leymooo.botfilter.BotFilterThread;
 import ru.leymooo.botfilter.config.Settings;
 import ru.leymooo.botfilter.utils.FakeOnlineUtils;
+import org.jline.reader.LineReader;
+import org.jline.reader.LineReaderBuilder;
+import org.jline.terminal.Terminal;
+import org.jline.terminal.TerminalBuilder;
+import org.slf4j.jul.JDK14LoggerFactory;
 
 /**
  * Main BungeeCord proxy class.
@@ -152,7 +156,7 @@ public class BungeeCord extends ProxyServer
     @Getter
     private final BungeeScheduler scheduler = new BungeeScheduler();
     @Getter
-    private final ConsoleReader consoleReader;
+    private final LineReader consoleReader;
     @Getter
     private final Logger logger;
     @Getter
@@ -191,7 +195,6 @@ public class BungeeCord extends ProxyServer
         private BungeeChannelInitializer serverInfoChannelInitializer;
     };
 
-    @SuppressFBWarnings("DM_DEFAULT_ENCODING")
     public BungeeCord() throws IOException
     {
         // Java uses ! to indicate a resource inside of a jar/zip/other container. Running Bungee from within a directory that has a ! will cause this to muck up.
@@ -209,10 +212,11 @@ public class BungeeCord extends ProxyServer
         // BungeeCord. This version is only used when extracting the libraries to their temp folder.
         System.setProperty( "library.jansi.version", "BungeeCord" );
 
-        AnsiConsole.systemInstall();
-        consoleReader = new ConsoleReader();
-        consoleReader.setExpandEvents( false );
-        consoleReader.addCompleter( new ConsoleCommandCompleter( this ) );
+        Terminal terminal = TerminalBuilder.builder().build();
+        consoleReader = LineReaderBuilder.builder().terminal( terminal )
+                .option( LineReader.Option.DISABLE_EVENT_EXPANSION, true )
+                .completer( new ConsoleCommandCompleter( this ) )
+                .build();
 
         logger = new BungeeLogger( "BungeeCord", "proxy.log", consoleReader );
         JDK14LoggerFactory.LOGGER = logger;
@@ -245,6 +249,11 @@ public class BungeeCord extends ProxyServer
 
         if ( !Boolean.getBoolean( "net.md_5.bungee.native.disable" ) )
         {
+            if ( !NativeCode.hasDirectBuffers() )
+            {
+                logger.warning( "Memory addresses are not available in direct buffers" );
+            }
+
             if ( EncryptionUtil.nativeFactory.load() )
             {
                 logger.info( "Using mbed TLS based native cipher." );
@@ -268,7 +277,6 @@ public class BungeeCord extends ProxyServer
      *
      * @throws Exception any critical errors encountered
      */
-    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     public void start() throws Exception
     {
         System.setProperty( "io.netty.selectorAutoRebuildThreshold", "0" ); // Seems to cause Bungee to stop accepting connections
@@ -280,6 +288,15 @@ public class BungeeCord extends ProxyServer
         // BotFilter start
         String nameProperty = System.getProperty( "bungeeName" );
         customBungeeName = ( nameProperty == null ? getName() : nameProperty ) + " " + getGameVersion();
+        // https://github.com/netty/netty/wiki/Netty-4.2-Migration-Guide
+        // The adaptive allocator, the new default allocator since Netty 4.2, has some memory issues.
+        // Setting it globally also ensures that any plugins would also use the pooled allocator.
+        if ( System.getProperty( "io.netty.allocator.type" ) == null )
+        {
+            System.setProperty( "io.netty.allocator.type", "pooled" );
+        }
+
+        eventLoops = PipelineUtils.newEventLoopGroup( 0, new ThreadFactoryBuilder().setNameFormat( "Netty IO Thread #%1$d" ).build() );
 
         this.botFilter = new BotFilter( true ); //Hook BotFilter into Bungee
         new FakeOnlineUtils(); //Init fake online
@@ -440,8 +457,6 @@ public class BungeeCord extends ProxyServer
     }
 
     // This must be run on a separate thread to avoid deadlock!
-    @SuppressFBWarnings("DM_EXIT")
-    @SuppressWarnings("TooBroadCatch")
     private void independentThreadStop(final String reason, boolean callSystemExit)
     {
         // Acquire the shutdown lock
