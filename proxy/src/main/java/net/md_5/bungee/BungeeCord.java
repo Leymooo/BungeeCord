@@ -84,8 +84,6 @@ import net.md_5.bungee.protocol.packet.PluginMessage;
 import net.md_5.bungee.query.RemoteQuery;
 import net.md_5.bungee.scheduler.BungeeScheduler;
 import net.md_5.bungee.util.CaseInsensitiveMap;
-import org.fusesource.jansi.AnsiConsole;
-import org.slf4j.impl.JDK14LoggerFactory;
 import ru.leymooo.botfilter.BotFilter;
 import ru.leymooo.botfilter.BotFilterCommand;
 import ru.leymooo.botfilter.BotFilterThread;

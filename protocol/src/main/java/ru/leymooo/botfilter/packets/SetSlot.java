@@ -1,17 +1,19 @@
 package ru.leymooo.botfilter.packets;
 
 import io.netty.buffer.ByteBuf;
+import java.util.LinkedHashMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import net.md_5.bungee.nbt.NamedTag;
+import net.md_5.bungee.nbt.Tag;
+import net.md_5.bungee.nbt.type.CompoundTag;
+import net.md_5.bungee.nbt.type.IntTag;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.ProtocolConstants;
-import se.llbit.nbt.CompoundTag;
-import se.llbit.nbt.IntTag;
-import se.llbit.nbt.NamedTag;
-import se.llbit.nbt.Tag;
+
 
 @Data
 @NoArgsConstructor
@@ -91,8 +93,8 @@ public class SetSlot extends DefinedPacket
                 buf.writeByte( 0 ); //No Nbt
             } else if ( version < ProtocolConstants.MINECRAFT_1_20_5 )
             {
-                CompoundTag nbt = new CompoundTag();
-                nbt.add( "map", new IntTag( 0 ) );
+                CompoundTag nbt = new CompoundTag(new LinkedHashMap<>() );
+                nbt.put( "map", new IntTag( 0 ) );
 
                 Tag write = version >= ProtocolConstants.MINECRAFT_1_20_2 ? nbt : new NamedTag( "", nbt );
 

@@ -8,14 +8,16 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import net.md_5.bungee.nbt.NamedTag;
+import net.md_5.bungee.nbt.Tag;
+import net.md_5.bungee.nbt.TypedTag;
+import net.md_5.bungee.nbt.type.CompoundTag;
+import net.md_5.bungee.nbt.type.ListTag;
+import net.md_5.bungee.nbt.type.StringTag;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.ProtocolConstants;
 import ru.leymooo.botfilter.utils.Dimension;
-import se.llbit.nbt.CompoundTag;
-import se.llbit.nbt.ListTag;
-import se.llbit.nbt.NamedTag;
-import se.llbit.nbt.Tag;
 
 @Data
 @NoArgsConstructor
@@ -82,16 +84,23 @@ public class RegistryData extends DefinedPacket
         }
 
         List<RegistryData> result = new ArrayList<>();
-        for (NamedTag tag : codec) {
-            String type = tag.getTag().get( "type" ).stringValue();
-            ListTag values = tag.getTag().get( "value" ).asList();
+        for ( TypedTag tag : codec.getValue().values()) {
+            String type = (( StringTag ) get( tag, "type" ) ).getValue();
+            ListTag values = get(tag, "value");
             List<Entry> entries = new ArrayList<>(values.size());
-            for (Tag value : values) {
-                Tag element = value.get( "element" );
-                entries.add( new Entry(value.get( "name" ).stringValue(), element.isError() ? null : element) );
+            for (Tag value : values.getValue()) {
+                Tag element = get( value,"element" );
+                entries.add( new Entry(((StringTag)get( value,"name" )).getValue(), element) );
             }
             result.add(new RegistryData(type, entries));
         }
+        return result;
+    }
+
+
+    private static <T> T get(Tag tag, String key) {
+        CompoundTag compoundTag = (CompoundTag) tag;
+        T result = (T) compoundTag.get( key );
         return result;
     }
 }

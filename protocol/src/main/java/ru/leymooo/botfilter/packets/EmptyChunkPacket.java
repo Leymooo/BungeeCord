@@ -2,17 +2,19 @@ package ru.leymooo.botfilter.packets;
 
 import io.netty.buffer.ByteBuf;
 import java.util.BitSet;
+import java.util.HashMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import net.md_5.bungee.nbt.NamedTag;
+import net.md_5.bungee.nbt.Tag;
+import net.md_5.bungee.nbt.type.CompoundTag;
+import net.md_5.bungee.nbt.type.LongArrayTag;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.ProtocolConstants;
-import se.llbit.nbt.CompoundTag;
-import se.llbit.nbt.LongArrayTag;
-import se.llbit.nbt.NamedTag;
-import se.llbit.nbt.Tag;
+
 
 @Data
 @NoArgsConstructor
@@ -142,8 +144,8 @@ public class EmptyChunkPacket extends DefinedPacket
 
         if ( version < ProtocolConstants.MINECRAFT_1_21_5 )
         {
-            CompoundTag compoundTag = new CompoundTag();
-            compoundTag.add( "MOTION_BLOCKING", new LongArrayTag( longArrayTag ) );
+            CompoundTag compoundTag = new CompoundTag(new HashMap<>() );
+            compoundTag.put( "MOTION_BLOCKING", new LongArrayTag( longArrayTag ) );
             Tag write = version >= ProtocolConstants.MINECRAFT_1_20_2 ? compoundTag : new NamedTag( "", compoundTag );
             writeTag( write, buf, version );
         } else
