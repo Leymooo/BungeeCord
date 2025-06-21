@@ -264,6 +264,12 @@ public class Dimension
             attributes.put( "monster_spawn_light_level", new IntTag( monster_spawn_light_level ) );
             attributes.put( "monster_spawn_block_light_limit", new IntTag( monster_spawn_block_light_limit ) );
         }
+
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_6 && key.equals( "minecraft:overworld" ) )
+        {
+            attributes.put( "cloud_height", new IntTag( 192 ) );
+        }
+
         CompoundTag tag = new CompoundTag(new LinkedHashMap<>());
 
         for ( Map.Entry<String, TypedTag> entry : attributes.entrySet() )

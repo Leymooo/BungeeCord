@@ -121,7 +121,7 @@ public class CachedCaptcha
             } else if ( version <= ProtocolConstants.MINECRAFT_1_21_4 )
             {
                 channel.write( buf1212.retainedDuplicate(), channel.voidPromise() );
-            } else if ( version <= ProtocolConstants.MINECRAFT_1_21_5 )
+            } else if ( version <= ProtocolConstants.MINECRAFT_1_21_6 )
             {
                 channel.write( buf1205and1215.retainedDuplicate(), channel.voidPromise() );
             } else

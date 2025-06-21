@@ -45,6 +45,7 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
         int packetId = DefinedPacket.readVarInt( in );
         if ( packetId < 0 || packetId > Protocol.MAX_PACKET_ID )
         {
+            in.skipBytes( in.readableBytes() );
             throw new FastBadPacketException( "[" + ctx.channel().remoteAddress() + "] <-> MinecraftDecoder received invalid packet id " + packetId );
         }
         //BotFilter end
@@ -63,8 +64,8 @@ public class MinecraftDecoder extends MessageToMessageDecoder<ByteBuf>
         {
             in.skipBytes( in.readableBytes() );
         }
-        //System.out.println( "ID: " + packetId + ( packet == null ? " (null)" : " ("+packet+")" ) );
-        ByteBuf slice = ( copyBuffer ) ? in.copy() : in.retainedSlice(); //BotFilter
+        //System.out.println( "ID: " + packetId + ( packet == null ? " (null)" : " ("+packet+")" ) + "/ copyBuffer: " + copyBuffer );
+        ByteBuf slice = ( copyBuffer ) ? in.copy(originalReaderIndex, originalReadableBytes) : in.retainedSlice(originalReaderIndex, originalReadableBytes); //BotFilter
         out.add( new PacketWrapper( packet, slice, protocol ) );
     }
 
