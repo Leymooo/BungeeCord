@@ -162,7 +162,7 @@ public class PacketUtils
             ProtocolConstants.MINECRAFT_1_20_3, ProtocolConstants.MINECRAFT_1_20_5,
             ProtocolConstants.MINECRAFT_1_21, ProtocolConstants.MINECRAFT_1_21_2,
             ProtocolConstants.MINECRAFT_1_21_4, ProtocolConstants.MINECRAFT_1_21_5,
-            ProtocolConstants.MINECRAFT_1_21_6 ) )
+            ProtocolConstants.MINECRAFT_1_21_6, ProtocolConstants.MINECRAFT_1_21_7 ) )
         {
             configurationRegistry.put( version, new CachedRegistryData( dimension, version ) );
         }
