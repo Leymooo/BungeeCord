@@ -28,18 +28,23 @@ import net.md_5.bungee.nbt.Tag;
 import net.md_5.bungee.nbt.TypedTag;
 import net.md_5.bungee.nbt.limit.NBTLimiter;
 import net.md_5.bungee.nbt.type.EndTag;
+import net.md_5.bungee.protocol.data.NumberFormat;
+import net.md_5.bungee.protocol.data.PlayerPublicKey;
+import net.md_5.bungee.protocol.data.Property;
+import net.md_5.bungee.protocol.util.Either;
+import net.md_5.bungee.protocol.util.TagUtil;
 
 @RequiredArgsConstructor
 public abstract class DefinedPacket
 {
 
     private static final FastException VARINT_TOO_BIG = new FastException( "varint too big" ); //BotFilter
-    public <T> T readNullable(Function<ByteBuf, T> reader, ByteBuf buf)
+    public static <T> T readNullable(Function<ByteBuf, T> reader, ByteBuf buf)
     {
         return buf.readBoolean() ? reader.apply( buf ) : null;
     }
 
-    public <T> void writeNullable(T t0, BiConsumer<T, ByteBuf> writer, ByteBuf buf)
+    public static <T> void writeNullable(T t0, BiConsumer<T, ByteBuf> writer, ByteBuf buf)
     {
         if ( t0 != null )
         {
@@ -51,7 +56,7 @@ public abstract class DefinedPacket
         }
     }
 
-    public <T> T readLengthPrefixed(Function<ByteBuf, T> reader, ByteBuf buf, int maxSize)
+    public static <T> T readLengthPrefixed(Function<ByteBuf, T> reader, ByteBuf buf, int maxSize)
     {
         int size = readVarInt( buf );
 
@@ -63,7 +68,7 @@ public abstract class DefinedPacket
         return reader.apply( buf.readSlice( size ) );
     }
 
-    public <T> void writeLengthPrefixed(T value, BiConsumer<T, ByteBuf> writer, ByteBuf buf, int maxSize)
+    public static <T> void writeLengthPrefixed(T value, BiConsumer<T, ByteBuf> writer, ByteBuf buf, int maxSize)
     {
         ByteBuf tempBuffer = buf.alloc().buffer();
         try
@@ -127,8 +132,7 @@ public abstract class DefinedPacket
             throw new FastOverflowPacketException( "Cannot receive string longer than " + maxLen * 3 + " (got " + len + " bytes)" );
         }
 
-        String s = buf.toString( buf.readerIndex(), len, StandardCharsets.UTF_8 );
-        buf.readerIndex( buf.readerIndex() + len );
+        String s = buf.readString( len, StandardCharsets.UTF_8 );
 
         if ( s.length() > maxLen )
         {

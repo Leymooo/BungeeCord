@@ -31,6 +31,7 @@ import net.md_5.bungee.api.Callback;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.ServerConnectRequest;
+import net.md_5.bungee.api.ServerLink;
 import net.md_5.bungee.api.SkinConfiguration;
 import net.md_5.bungee.api.Title;
 import net.md_5.bungee.api.chat.BaseComponent;
@@ -52,7 +53,6 @@ import net.md_5.bungee.netty.HandlerBoss;
 import net.md_5.bungee.netty.PipelineUtils;
 import net.md_5.bungee.protocol.ChatSerializer;
 import net.md_5.bungee.protocol.DefinedPacket;
-import net.md_5.bungee.protocol.Either;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
 import net.md_5.bungee.protocol.ProtocolConstants;
@@ -62,12 +62,14 @@ import net.md_5.bungee.protocol.packet.ClientSettings;
 import net.md_5.bungee.protocol.packet.Kick;
 import net.md_5.bungee.protocol.packet.PlayerListHeaderFooter;
 import net.md_5.bungee.protocol.packet.PluginMessage;
+import net.md_5.bungee.protocol.packet.ServerLinks;
 import net.md_5.bungee.protocol.packet.SetCompression;
 import net.md_5.bungee.protocol.packet.ShowDialog;
 import net.md_5.bungee.protocol.packet.ShowDialogDirect;
 import net.md_5.bungee.protocol.packet.StoreCookie;
 import net.md_5.bungee.protocol.packet.SystemChat;
 import net.md_5.bungee.protocol.packet.Transfer;
+import net.md_5.bungee.protocol.util.Either;
 import net.md_5.bungee.tab.ServerUnique;
 import net.md_5.bungee.tab.TabList;
 import net.md_5.bungee.util.CaseInsensitiveSet;
@@ -881,5 +883,17 @@ public final class UserConnection implements ProxiedPlayer
         }
 
         unsafe.sendPacket( new ShowDialog( Either.right( dialog ) ) );
+    }
+
+    @Override
+    public void sendServerLinks(List<ServerLink> serverLinks)
+    {
+        Preconditions.checkState( getPendingConnection().getVersion() >= ProtocolConstants.MINECRAFT_1_21, "Server links are only supported in 1.21 and above" );
+
+        ServerLinks.Link[] links = serverLinks.stream()
+                .map( link -> new ServerLinks.Link( link.getType() != null ? Either.left( link.getType().ordinal() ) : Either.right( link.getLabel() ), link.getUrl() ) )
+                .toArray( ServerLinks.Link[]::new );
+
+        unsafe.sendPacket( new ServerLinks( links ) );
     }
 }

@@ -17,6 +17,7 @@ import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.ComponentStyle;
 import net.md_5.bungee.api.chat.ItemTag;
 import net.md_5.bungee.api.chat.KeybindComponent;
+import net.md_5.bungee.api.chat.ObjectComponent;
 import net.md_5.bungee.api.chat.ScoreComponent;
 import net.md_5.bungee.api.chat.SelectorComponent;
 import net.md_5.bungee.api.chat.TextComponent;
@@ -61,6 +62,7 @@ public class VersionedComponentSerializer implements JsonDeserializer<BaseCompon
                 registerTypeAdapter( KeybindComponent.class, new KeybindComponentSerializer( this ) ).
                 registerTypeAdapter( ScoreComponent.class, new ScoreComponentSerializer( this ) ).
                 registerTypeAdapter( SelectorComponent.class, new SelectorComponentSerializer( this ) ).
+                registerTypeAdapter( ObjectComponent.class, new ObjectComponentSerializer( this ) ).
                 registerTypeAdapter( ComponentStyle.class, new ComponentStyleSerializer() ).
                 registerTypeAdapter( Entity.class, new EntitySerializer( this ) ).
                 registerTypeAdapter( Text.class, new TextSerializer() ).
@@ -265,7 +267,7 @@ public class VersionedComponentSerializer implements JsonDeserializer<BaseCompon
         if ( json.isJsonArray() )
         {
             JsonArray arr = json.getAsJsonArray();
-            BaseComponent[] components = new BaseComponent[arr.size()];
+            BaseComponent[] components = new BaseComponent[ arr.size() ];
             for ( int i = 0; i < arr.size(); i++ )
             {
                 components[i] = deserialize( arr.get( i ), BaseComponent.class, context );
@@ -289,6 +291,10 @@ public class VersionedComponentSerializer implements JsonDeserializer<BaseCompon
         if ( object.has( "selector" ) )
         {
             return context.deserialize( json, SelectorComponent.class );
+        }
+        if ( object.has( "player" ) || object.has( "sprite" ) )
+        {
+            return context.deserialize( json, ObjectComponent.class );
         }
         return context.deserialize( json, TextComponent.class );
     }
