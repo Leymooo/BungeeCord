@@ -152,7 +152,7 @@ public class PacketUtils
                 new PlayerPositionAndLook( 7.00, 450, 7.00, 90f, 10f, 9876, false ), //7
                 new SetExp( 0, 0, 0 ), //8
                 createPluginMessage(), //9
-                new DefaultSpawnPosition( 7, 450, 7, 123 ),//10
+                new DefaultSpawnPosition(dimension, 7, 450, 7, 123, 0 ),//10
                 new FinishConfiguration(), //11
                 new GameState( (short) 13, 0f ), //12
             };
@@ -162,7 +162,7 @@ public class PacketUtils
             ProtocolConstants.MINECRAFT_1_20_3, ProtocolConstants.MINECRAFT_1_20_5,
             ProtocolConstants.MINECRAFT_1_21, ProtocolConstants.MINECRAFT_1_21_2,
             ProtocolConstants.MINECRAFT_1_21_4, ProtocolConstants.MINECRAFT_1_21_5,
-            ProtocolConstants.MINECRAFT_1_21_6, ProtocolConstants.MINECRAFT_1_21_7 ) )
+            ProtocolConstants.MINECRAFT_1_21_6, ProtocolConstants.MINECRAFT_1_21_7, ProtocolConstants.MINECRAFT_1_21_9 ) )
         {
             configurationRegistry.put( version, new CachedRegistryData( dimension, version ) );
         }

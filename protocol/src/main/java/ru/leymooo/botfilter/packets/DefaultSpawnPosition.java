@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import net.md_5.bungee.protocol.AbstractPacketHandler;
 import net.md_5.bungee.protocol.DefinedPacket;
 import net.md_5.bungee.protocol.ProtocolConstants;
+import ru.leymooo.botfilter.utils.Dimension;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -14,14 +15,22 @@ import net.md_5.bungee.protocol.ProtocolConstants;
 public class DefaultSpawnPosition extends DefinedPacket
 {
 
+    private Dimension dimension;
     private int posX;
     private int posY;
     private int posZ;
-    private float angle;
+    private float yaw; //angle
+    private float pitch;
 
     @Override
     public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
     {
+
+        if (protocolVersion >= ProtocolConstants.MINECRAFT_1_21_9)
+        {
+            DefinedPacket.writeString( dimension.getKey(), buf );
+        }
+
         long location;
         if ( protocolVersion < ProtocolConstants.MINECRAFT_1_14 )
         {
@@ -35,7 +44,11 @@ public class DefaultSpawnPosition extends DefinedPacket
 
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_17 )
         {
-            buf.writeFloat( this.angle );
+            buf.writeFloat( this.yaw );
+            if (protocolVersion >= ProtocolConstants.MINECRAFT_1_21_9)
+            {
+                buf.writeFloat( this.pitch );
+            }
         }
     }
 

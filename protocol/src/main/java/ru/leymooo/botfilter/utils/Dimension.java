@@ -96,6 +96,7 @@ public class Dimension
     private final int minY;
     private final int height;
     private final List<Biome> biomes;
+    //TODO: ambient_light for END dimension
 
     private static CompoundTag read(DataInputStream dataInputStream) throws Exception
     {
