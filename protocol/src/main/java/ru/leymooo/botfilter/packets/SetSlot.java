@@ -112,12 +112,12 @@ public class SetSlot extends DefinedPacket
                     } else if (version < ProtocolConstants.MINECRAFT_1_21_5 )
                     {
                         DefinedPacket.writeVarInt( 36, buf ); //map data component
-                    } else {
+                    } else if (version < ProtocolConstants.MINECRAFT_1_21_11 ) {
                         DefinedPacket.writeVarInt( 37, buf ); //map data component
+                    } else {
+                        DefinedPacket.writeVarInt( 44, buf ); //map data component
                     }
                     DefinedPacket.writeVarInt( 0, buf ); //component value
-
-
                 } else
                 {
                     DefinedPacket.writeVarInt( 0, buf );

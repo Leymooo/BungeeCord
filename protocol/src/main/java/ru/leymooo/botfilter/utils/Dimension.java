@@ -45,7 +45,7 @@ public class Dimension
     public static Dimension THE_END = new Dimension( "minecraft:the_end", 1, 2, false, true, 0.0f,
         "minecraft:infiniburn_end", false, true, true,
         "minecraft:the_end", true, 0, 0,
-        256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.THE_END ) );
+        256, 1.0f, true, false, 0, 256, Arrays.asList( Biome.THE_END ) );
     static CompoundTag damageType;
     static CompoundTag damageType1_20;
     static CompoundTag damageType1_21;
@@ -173,7 +173,7 @@ public class Dimension
 
         CompoundTag root = new CompoundTag(new LinkedHashMap<>());
         root.put( "minecraft:dimension_type", dimensions );
-        root.put( "minecraft:worldgen/biome", createBiomeRegistry() );
+        root.put( "minecraft:worldgen/biome", createBiomeRegistry(protocolVersion) );
 
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_19_4 )
         {
@@ -209,7 +209,9 @@ public class Dimension
             root.put( "minecraft:cow_variant", createEntityVariant( protocolVersion, "minecraft:cow_variant", "cow", true, "temperate" ) );
             root.put( "minecraft:minecraft:chicken_variant", createEntityVariant( protocolVersion, "minecraft:chicken_variant", "chicken", true, "temperate" ) );
             root.put( "minecraft:wolf_sound_variant", createWoldSoundVariant( protocolVersion ) );
-
+        }
+        if (protocolVersion >= ProtocolConstants.MINECRAFT_1_21_11 ) {
+            root.put( "zombie_nautilus_variant", createEntityVariant( protocolVersion, "zombie_nautilus_variant", "zombie_nautilus", true, "temperate" ) );
         }
 
         return protocolVersion >= ProtocolConstants.MINECRAFT_1_20_2 ? root : new NamedTag( "", root );
@@ -222,58 +224,117 @@ public class Dimension
 
     private CompoundTag encodeAttributes(int protocolVersion)
     {
-        Map<String, TypedTag> attributes = new HashMap<>();
+        Map<String, TypedTag> elements = new HashMap<>();
 
         // 1.16 - 1.16.1
-        attributes.put( "name", new StringTag( key ) );
+        elements.put( "name", new StringTag( key ) );
         //
-        attributes.put( "natural", new ByteTag( (byte) ( natural ? 1 : 0 ) ) );
-        attributes.put( "has_skylight", new ByteTag( (byte) ( hasSkylight ? 1 : 0 ) ) );
-        attributes.put( "has_ceiling", new ByteTag( (byte) ( hasCeiling ? 1 : 0 ) ) );
+        elements.put( "natural", new ByteTag( (byte) ( natural ? 1 : 0 ) ) );
+        elements.put( "has_skylight", new ByteTag( (byte) ( hasSkylight ? 1 : 0 ) ) );
+        elements.put( "has_ceiling", new ByteTag( (byte) ( hasCeiling ? 1 : 0 ) ) );
         // 1.16 - 1.16.1
-        attributes.put( "fixed_time", new LongTag( 10_000 ) );
-        attributes.put( "shrunk", new ByteTag( (byte) 0 ) );
+        elements.put( "fixed_time", new LongTag( 10_000 ) );
+        elements.put( "shrunk", new ByteTag( (byte) 0 ) );
         //
-        attributes.put( "ambient_light", new FloatTag( ambientLight ) );
-        attributes.put( "ultrawarm", new ByteTag( (byte) ( ultrawarm ? 1 : 0 ) ) );
-        attributes.put( "has_raids", new ByteTag( (byte) ( hasRaids ? 1 : 0 ) ) );
-        attributes.put( "respawn_anchor_works", new ByteTag( (byte) ( respawnAnchorWorks ? 1 : 0 ) ) );
-        attributes.put( "bed_works", new ByteTag( (byte) ( bedWorks ? 1 : 0 ) ) );
-        attributes.put( "piglin_safe", new ByteTag( (byte) ( piglinSafe ? 1 : 0 ) ) );
-        attributes.put( "infiniburn", new StringTag( infiniburn ) );
-        attributes.put( "logical_height", new ByteTag( (byte) logicalHeight ) );
+        elements.put( "ambient_light", new FloatTag( ambientLight ) );
+        elements.put( "ultrawarm", new ByteTag( (byte) ( ultrawarm ? 1 : 0 ) ) );
+        elements.put( "has_raids", new ByteTag( (byte) ( hasRaids ? 1 : 0 ) ) );
+        elements.put( "respawn_anchor_works", new ByteTag( (byte) ( respawnAnchorWorks ? 1 : 0 ) ) );
+        elements.put( "bed_works", new ByteTag( (byte) ( bedWorks ? 1 : 0 ) ) );
+        elements.put( "piglin_safe", new ByteTag( (byte) ( piglinSafe ? 1 : 0 ) ) );
+        elements.put( "infiniburn", new StringTag( infiniburn ) );
+        elements.put( "logical_height", new ByteTag( (byte) logicalHeight ) );
 
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_16_2 )
         {
-            attributes.remove( "name" ); // removed
-            attributes.remove( "fixed_time" ); // removed
-            attributes.remove( "shrunk" ); // removed
+            elements.remove( "name" ); // removed
+            elements.remove( "fixed_time" ); // removed
+            elements.remove( "shrunk" ); // removed
 
-            attributes.put( "effects", new StringTag( effects ) ); // added
-            attributes.put( "coordinate_scale", new FloatTag( coordinateScale ) ); // added
+            elements.put( "effects", new StringTag( effects ) ); // added
+            elements.put( "coordinate_scale", new FloatTag( coordinateScale ) ); // added
         }
 
-        attributes.put( "height", new IntTag( height ) );
-        attributes.put( "min_y", new IntTag( minY ) );
+        elements.put( "height", new IntTag( height ) );
+        elements.put( "min_y", new IntTag( minY ) );
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_18_2 )
         {
-            attributes.put( "infiniburn", new StringTag( "#" + infiniburn ) ); // added
+            elements.put( "infiniburn", new StringTag( "#" + infiniburn ) ); // added
         }
 
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_19 )
         {
-            attributes.put( "monster_spawn_light_level", new IntTag( monster_spawn_light_level ) );
-            attributes.put( "monster_spawn_block_light_limit", new IntTag( monster_spawn_block_light_limit ) );
+            elements.put( "monster_spawn_light_level", new IntTag( monster_spawn_light_level ) );
+            elements.put( "monster_spawn_block_light_limit", new IntTag( monster_spawn_block_light_limit ) );
         }
 
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_6 && key.equals( "minecraft:overworld" ) )
         {
-            attributes.put( "cloud_height", new IntTag( 192 ) );
+            elements.put( "cloud_height", new IntTag( 192 ) );
+        }
+
+
+        if (protocolVersion >= ProtocolConstants.MINECRAFT_1_21_11) {
+            //TODO: timelines???
+            CompoundTag attributes = new CompoundTag(new LinkedHashMap<>());
+
+
+            if (!natural) {
+                attributes.put("visual/sky_light_factor", new FloatTag(0F));
+            }
+            if (ultrawarm) {
+                CompoundTag defaultDripstoneParticle = new CompoundTag();
+                defaultDripstoneParticle.put("type", new StringTag("dripping_dripstone_lava"));
+                attributes.put("visual/default_dripstone_particle", defaultDripstoneParticle);
+            }
+
+
+            if (elements.containsKey( "cloud_height" )) {
+                elements.remove( "cloud_height" );
+                attributes.put( "visual/cloud_height", new FloatTag(192F) );
+                attributes.put( "visual/cloud_color", new StringTag("#ccffffff") );
+            }
+
+
+            elements.remove( "has_raids" );
+            attributes.put( "gameplay/can_start_raid", hasRaids ? new ByteTag( (byte) 1 ) : new ByteTag( (byte) 0 ) );
+
+            elements.remove( "piglin_safe");
+            attributes.put( "gameplay/piglins_zombify", piglinSafe ? new ByteTag( (byte) 0 ) : new ByteTag( (byte) 1 ) );
+
+            elements.remove( "respawn_anchor_works");
+            attributes.put( "gameplay/respawn_anchor_works", respawnAnchorWorks ? new ByteTag( (byte) 1 ) : new ByteTag( (byte) 0 ) );
+
+            attributes.put( "gameplay/fast_lava", ultrawarm ? new ByteTag( (byte) 1 ) : new ByteTag( (byte) 0 ) );
+            attributes.put( "gameplay/water_evaporates", ultrawarm ? new ByteTag( (byte) 1 ) : new ByteTag( (byte) 0 ) );
+
+
+            if (key.equals( "minecraft:overworld" )) {
+
+            }
+
+            if (key.equals( "minecraft:the_nether" )) {
+                elements.put( "skybox", new StringTag("none") );
+                elements.put( "cardinal_light", new StringTag("nether") );
+                attributes.put( "visual/sky_light_color", new StringTag("#7a7aff") );
+                attributes.put( "visual/fog_start_distance", new FloatTag(10F) );
+                attributes.put( "visual/fog_end_distance", new FloatTag(96F) );
+                attributes.put( "gameplay/sky_light_level", new FloatTag(4F) );
+            }
+            if (key.equals( "minecraft:the_end" )) {
+                elements.put( "skybox", new StringTag("end") );
+
+                attributes.put( "visual/fog_color", new StringTag("#181318") );
+                attributes.put( "visual/sky_color", new StringTag("#000000") );
+                attributes.put( "visual/sky_light_color", new StringTag("#e580ff") );
+            }
+
+            elements.put("attributes", attributes);
         }
 
         CompoundTag tag = new CompoundTag(new LinkedHashMap<>());
 
-        for ( Map.Entry<String, TypedTag> entry : attributes.entrySet() )
+        for ( Map.Entry<String, TypedTag> entry : elements.entrySet() )
         {
             tag.put( entry.getKey(), entry.getValue() );
         }
@@ -281,14 +342,14 @@ public class Dimension
         return tag;
     }
 
-    private CompoundTag createBiomeRegistry()
+    private CompoundTag createBiomeRegistry(int version)
     {
         CompoundTag root = new CompoundTag(new LinkedHashMap<>());
         root.put( "type", new StringTag( "minecraft:worldgen/biome" ) );
         List<TypedTag> biomes = new ArrayList<>();
         for ( Biome biome : this.biomes )
         {
-            biomes.add( encodeBiome( biome ) );
+            biomes.add( encodeBiome( biome, version ) );
         }
         root.put( "value", new ListTag( biomes, Tag.COMPOUND ) );
         return root;
@@ -436,7 +497,7 @@ public class Dimension
     }
 
 
-    private CompoundTag encodeBiome(Biome biome)
+    private CompoundTag encodeBiome(Biome biome, int version)
     {
         CompoundTag biomeTag = new CompoundTag(new LinkedHashMap<>());
 
@@ -454,7 +515,7 @@ public class Dimension
         element.put( "downfall", new FloatTag( biome.getDownfall() ) );
         element.put( "category", new StringTag( biome.getCategory() ) );
 
-        CompoundTag effects = new CompoundTag(new LinkedHashMap<>());
+        Map<String, TypedTag> effects = new LinkedHashMap<>();
         effects.put( "sky_color", new IntTag( biome.getSky_color() ) );
         effects.put( "water_fog_color", new IntTag( biome.getWater_color() ) );
         effects.put( "fog_color", new IntTag( biome.getFog_color() ) );
@@ -468,6 +529,22 @@ public class Dimension
             effects.put( "foliage_color", new IntTag( biome.getFoliage_color() ) );
         }
 
+        if (version >= ProtocolConstants.MINECRAFT_1_21_11) {
+            CompoundTag attributes = new CompoundTag(new LinkedHashMap<>());
+            effects.remove( "sky_color" );
+            attributes.put( "visual/sky_color", new IntTag( biome.getSky_color() ) );
+            if (!key.equals( "minecraft:the_end" ))
+            {
+                effects.remove( "water_fog_color" );
+                effects.remove( "fog_color" );
+                attributes.put( "visual/water_fog_color", new IntTag( biome.getWater_color() ) );
+                attributes.put( "visual/fog_color", new IntTag( biome.getFog_color() ) );
+            }
+            effects.put( "attributes", attributes );
+        }
+
+
+
         CompoundTag moodSound = new CompoundTag(new LinkedHashMap<>());
         moodSound.put( "tick_delay", new IntTag( biome.getTick_delay() ) );
         moodSound.put( "offset", new DoubleTag( biome.getOffset() ) );
@@ -476,7 +553,7 @@ public class Dimension
 
         effects.put( "mood_sound", moodSound );
 
-        element.put( "effects", effects );
+        element.put( "effects", new CompoundTag(effects) );
         biomeTag.put( "element", element );
         return biomeTag;
     }
