@@ -28,18 +28,21 @@ import net.md_5.bungee.ServerConnection.KeepAliveData;
 import net.md_5.bungee.ServerConnector;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.Util;
+import net.md_5.bungee.api.Callback;
 import net.md_5.bungee.api.ProxyServer;
 import net.md_5.bungee.api.chat.BaseComponent;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.api.config.ServerInfo;
 import net.md_5.bungee.api.connection.ProxiedPlayer;
 import net.md_5.bungee.api.connection.Server;
+import net.md_5.bungee.api.event.PlayerConfigurationEvent;
 import net.md_5.bungee.api.event.PluginMessageEvent;
 import net.md_5.bungee.api.event.ServerConnectEvent;
 import net.md_5.bungee.api.event.ServerDisconnectEvent;
 import net.md_5.bungee.api.event.ServerKickEvent;
 import net.md_5.bungee.api.event.TabCompleteResponseEvent;
 import net.md_5.bungee.api.plugin.Command;
+import net.md_5.bungee.api.plugin.TabExecutor;
 import net.md_5.bungee.api.score.Objective;
 import net.md_5.bungee.api.score.Position;
 import net.md_5.bungee.api.score.Score;
@@ -58,6 +61,7 @@ import net.md_5.bungee.protocol.packet.Commands;
 import net.md_5.bungee.protocol.packet.FinishConfiguration;
 import net.md_5.bungee.protocol.packet.KeepAlive;
 import net.md_5.bungee.protocol.packet.Kick;
+import net.md_5.bungee.protocol.packet.KnownPacks;
 import net.md_5.bungee.protocol.packet.Login;
 import net.md_5.bungee.protocol.packet.PlayerListItem;
 import net.md_5.bungee.protocol.packet.PlayerListItemRemove;
@@ -187,6 +191,13 @@ public class DownstreamBridge extends PacketHandler
         {
             server.getKeepAlives().add( new KeepAliveData( alive.getRandomId(), System.currentTimeMillis() ) );
         }
+        // In 1.20.2 the server can enter game phase and send KeepAlive to the client while the client is still config phase,
+        // resulting in clientside exceptions because of different packet ids.
+        // To fix this, we don't forward the ByteBuf and just send the packet manually.
+        // I think the reason for that is that in 1.20.2 the server does not wait for any responses of the client
+        // in config phase, so it directly send finish config enters game and then waits for client and sends KeepAlive.
+        con.unsafe().sendPacket( alive );
+        throw CancelSendSignal.INSTANCE;
     }
 
     @Override
@@ -783,15 +794,33 @@ public class DownstreamBridge extends PacketHandler
 
         for ( Map.Entry<String, Command> command : bungee.getPluginManager().getCommands() )
         {
-            if ( !bungee.getDisabledCommands().contains( command.getKey() ) && commands.getRoot().getChild( command.getKey() ) == null && command.getValue().hasPermission( con ) )
+            if ( !bungee.getDisabledCommands().contains( command.getKey() ) && command.getValue().hasPermission( con ) )
             {
-                CommandNode dummy = LiteralArgumentBuilder.literal( command.getKey() ).executes( DUMMY_COMMAND )
-                        .then( RequiredArgumentBuilder.argument( "args", StringArgumentType.greedyString() )
-                                .suggests( Commands.SuggestionRegistry.ASK_SERVER ).executes( DUMMY_COMMAND ) )
-                        .build();
-                commands.getRoot().addChild( dummy );
+                boolean insertDummy = true;
 
-                modified = true;
+                CommandNode child = commands.getRoot().getChild( command.getKey() );
+                if ( child != null )
+                {
+                    if ( command.getValue() instanceof TabExecutor )
+                    {
+                        // Allow Bungee command to handle tab completion rather than Brigadier
+                        commands.getRoot().getChildren().remove( child );
+                    } else
+                    {
+                        insertDummy = false;
+                    }
+                }
+
+                if ( insertDummy )
+                {
+                    CommandNode dummy = LiteralArgumentBuilder.literal( command.getKey() ).executes( DUMMY_COMMAND )
+                            .then( RequiredArgumentBuilder.argument( "args", StringArgumentType.greedyString() )
+                                    .suggests( Commands.SuggestionRegistry.ASK_SERVER ).executes( DUMMY_COMMAND ) )
+                            .build();
+                    commands.getRoot().addChild( dummy );
+
+                    modified = true;
+                }
             }
         }
 
@@ -826,10 +855,30 @@ public class DownstreamBridge extends PacketHandler
     @Override
     public void handle(FinishConfiguration finishConfiguration) throws Exception
     {
-        // the clients protocol will change to GAME after this packet
-        con.unsafe().sendPacket( finishConfiguration );
-        // send queued packets as early as possible
-        con.sendQueuedPackets();
+        Runnable finish = () ->
+        {
+            con.unsafe().sendPacket( finishConfiguration );
+            con.sendQueuedPackets();
+        };
+        // fire the event here as we can keep the connection alive pre 1.20.5.
+        // for newer clients use the KnownPacks packet.
+        if ( con.getPendingConnection().getVersion() <= ProtocolConstants.MINECRAFT_1_20_3 )
+        {
+            callConfigEvent( finish );
+        } else
+        {
+            finish.run();
+        }
+
+        throw CancelSendSignal.INSTANCE;
+    }
+
+    @Override
+    public void handle(KnownPacks knownPacks) throws Exception
+    {
+        // call PlayerConfiguration event here.
+        // For older clients its called when FinishConfiguration is received.
+        callConfigEvent( () -> con.unsafe().sendPacket( knownPacks ) );
         throw CancelSendSignal.INSTANCE;
     }
 
@@ -843,5 +892,41 @@ public class DownstreamBridge extends PacketHandler
     public String toString()
     {
         return "[" + con.getName() + "] <-> DownstreamBridge <-> [" + server.getInfo().getName() + "]";
+    }
+
+    // this method is used for event execution
+    // if this connection is disconnected during an event-call, the original callback is not called
+    // if the event was executed async, we execute the callback on the eventloop again
+    // otherwise netty will schedule any pipeline related call by itself, this decreases performance
+    private <T> Callback<T> eventLoopCallback(Callback<T> callback)
+    {
+        return (result, error) ->
+        {
+            server.getCh().scheduleIfNecessary( () ->
+            {
+                if ( server.getCh().isClosing() || con.getCh().isClosing() )
+                {
+                    return;
+                }
+
+                if ( !server.getInfo().equals( con.getServer().getInfo() ) )
+                {
+                    return;
+                }
+
+                callback.done( result, error );
+            } );
+        };
+    }
+
+    private void callConfigEvent(Runnable runnable)
+    {
+        PlayerConfigurationEvent event = new PlayerConfigurationEvent(
+                con,
+                server.isFirstLogin() ? PlayerConfigurationEvent.Reason.LOGIN : PlayerConfigurationEvent.Reason.RECONFIGURE,
+                eventLoopCallback( (result, error) -> runnable.run() )
+        );
+        server.setFirstLogin( false );
+        bungee.getPluginManager().callEvent( event );
     }
 }
