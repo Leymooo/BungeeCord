@@ -104,8 +104,10 @@ public class EmptyChunkPacket extends DefinedPacket
         {
             byte[] sectionData = new byte[] { 0, 0, 0, 0, 0, 0, 1, 0 };
             byte[] sectionData1215 = new byte[] { 0, 0, 0, 0, 0, 1};
+            byte[] sectionData26_1 = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 };
 
             byte[] currentData = version < ProtocolConstants.MINECRAFT_1_21_5 ? sectionData : sectionData1215;
+            currentData = version >= ProtocolConstants.MINECRAFT_26_1 ? sectionData26_1 : currentData;
 
             writeVarInt( currentData.length * 16, buf );
             for ( int i = 0; i < 16; i++ )

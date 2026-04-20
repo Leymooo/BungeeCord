@@ -23,10 +23,21 @@ public class TimeUpdate extends DefinedPacket
     public void write(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
     {
         buf.writeLong( age );
-        buf.writeLong( time );
-        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_2 )
+
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_26_1 )
         {
-            buf.writeBoolean( false ); //time of day increasing
+            writeVarInt( 1, buf );
+            writeVarInt( 0, buf );
+            writeVarLong( time, buf );
+            buf.writeFloat( 0 );
+            buf.writeFloat( 0 );
+        } else
+        {
+            buf.writeLong( time );
+            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_2 )
+            {
+                buf.writeBoolean( false ); //time of day increasing
+            }
         }
     }
 

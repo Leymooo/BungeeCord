@@ -355,6 +355,17 @@ public abstract class DefinedPacket
         }
     }
 
+    public static void writeVarLong(long value, ByteBuf buf)
+    {
+        while ( ( value & -128L ) != 0L )
+        {
+            buf.writeByte( (int) ( value & 127L ) | 128 );
+            value >>>= 7;
+        }
+
+        buf.writeByte( (int) value );
+    }
+
     public static int readVarShort(ByteBuf buf)
     {
         int low = buf.readUnsignedShort();

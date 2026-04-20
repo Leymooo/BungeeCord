@@ -43,6 +43,7 @@ public class PacketUtils
     private static final HashMap<KickType, CachedPacket> kickMessagesLogin = new HashMap<>( 4 );
 
     private static final HashMap<Integer, CachedRegistryData> configurationRegistry = new HashMap<>();
+    private static final HashMap<Integer, CachedUpdateTags> cachedUpdateTags = new HashMap<>();
 
     public static int PROTOCOLS_COUNT = ProtocolConstants.SUPPORTED_VERSION_IDS.size();
     public static int CLIENTID = new Random().nextInt( Integer.MAX_VALUE - 100 ) + 50;
@@ -163,9 +164,13 @@ public class PacketUtils
             ProtocolConstants.MINECRAFT_1_21, ProtocolConstants.MINECRAFT_1_21_2,
             ProtocolConstants.MINECRAFT_1_21_4, ProtocolConstants.MINECRAFT_1_21_5,
             ProtocolConstants.MINECRAFT_1_21_6, ProtocolConstants.MINECRAFT_1_21_7,
-            ProtocolConstants.MINECRAFT_1_21_9, ProtocolConstants.MINECRAFT_1_21_11 ) )
+            ProtocolConstants.MINECRAFT_1_21_9, ProtocolConstants.MINECRAFT_1_21_11, ProtocolConstants.MINECRAFT_26_1 ) )
         {
             configurationRegistry.put( version, new CachedRegistryData( dimension, version ) );
+        }
+
+        for (int version : Arrays.asList( ProtocolConstants.MINECRAFT_26_1 )) {
+            cachedUpdateTags.put( version, new CachedUpdateTags( version ) );
         }
 
         for ( int i = 0; i < packets.length; i++ )
@@ -353,6 +358,10 @@ public class PacketUtils
         if ( version >= ProtocolConstants.MINECRAFT_1_20_2 )
         {
             configurationRegistry.get( version ).write( channel );
+            if (version >= ProtocolConstants.MINECRAFT_26_1 )
+            {
+                cachedUpdateTags.get( version ).write( channel );
+            }
             channel.write( getCachedPacket( 11 ).get( version ), channel.voidPromise() );
         }
         channel.flush();

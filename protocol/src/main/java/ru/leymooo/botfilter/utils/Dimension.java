@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.zip.GZIPInputStream;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -34,40 +35,32 @@ import net.md_5.bungee.protocol.ProtocolConstants;
 @Getter
 public class Dimension
 {
-    public static Dimension OVERWORLD = new Dimension( "minecraft:overworld", 0, 0, false, true, 0.0f,
-        "minecraft:infiniburn_overworld", false, true, true,
-        "minecraft:overworld", true, 0, 0,
-        256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.PLAINS, Biome.SWAMP, Biome.SWAMP_HILLS ) );
-    public static Dimension THE_NETHER = new Dimension( "minecraft:the_nether", -1, 1, false, true, 0.0f,
-        "minecraft:infiniburn_nether", false, true, true,
-        "minecraft:the_nether", true, 0, 0,
-        256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.NETHER_WASTES ) );
-    public static Dimension THE_END = new Dimension( "minecraft:the_end", 1, 2, false, true, 0.0f,
-        "minecraft:infiniburn_end", false, true, true,
-        "minecraft:the_end", true, 0, 0,
-        256, 1.0f, true, false, 0, 256, Arrays.asList( Biome.THE_END ) );
+
+
+    public static Dimension OVERWORLD = new Dimension( "minecraft:overworld", 0, 0, false, true, 0.0f, "minecraft:infiniburn_overworld", false, true, true, "minecraft:overworld", true, 0, 0, 256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.PLAINS, Biome.SWAMP, Biome.SWAMP_HILLS ) );
+    public static Dimension THE_NETHER = new Dimension( "minecraft:the_nether", -1, 1, false, true, 0.0f, "minecraft:infiniburn_nether", false, true, true, "minecraft:the_nether", true, 0, 0, 256, 1.0f, false, false, 0, 256, Arrays.asList( Biome.NETHER_WASTES ) );
+    public static Dimension THE_END = new Dimension( "minecraft:the_end", 1, 2, false, true, 0.0f, "minecraft:infiniburn_end", false, true, true, "minecraft:the_end", true, 0, 0, 256, 1.0f, true, false, 0, 256, Arrays.asList( Biome.THE_END ) );
     static CompoundTag damageType;
     static CompoundTag damageType1_20;
     static CompoundTag damageType1_21;
     static CompoundTag damageType1_21_2;
+    static CompoundTag damageType26_1;
 
     static
     {
         try
         {
-            damageType = (CompoundTag) read(
-                new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.19.4.nbt" ) ) ) ) );
-            damageType1_20 = (CompoundTag) read(
-                new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.20.nbt" ) ) ) ) );
-            damageType1_21 = (CompoundTag) read(
-                new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.20.nbt" ) ) ) ) );
+            damageType = (CompoundTag) read( new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.19.4.nbt" ) ) ) ) );
+            damageType1_20 = (CompoundTag) read( new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.20.nbt" ) ) ) ) );
+            damageType1_21 = (CompoundTag) read( new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.20.nbt" ) ) ) ) );
 
-            damageType1_21_2 = (CompoundTag) read(
-                new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.20.nbt" ) ) ) ) );
+            damageType1_21_2 = (CompoundTag) read( new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.20.nbt" ) ) ) ) );
 
+            damageType26_1 = (CompoundTag) read( new DataInputStream( new BufferedInputStream( new GZIPInputStream( Dimension.class.getResourceAsStream( "/damage-types-1.20.nbt" ) ) ) ) );
 
             appendElementsDamageType( damageType1_21, ProtocolConstants.MINECRAFT_1_21 );
             appendElementsDamageType( damageType1_21_2, ProtocolConstants.MINECRAFT_1_21_2 );
+            appendElementsDamageType( damageType26_1, ProtocolConstants.MINECRAFT_26_1 );
 
         } catch ( Exception e )
         {
@@ -108,44 +101,37 @@ public class Dimension
     private static void appendElementsDamageType(CompoundTag compoundTag, int version)
     {
         ListTag list = (ListTag) compoundTag.get( "value" );
-        CompoundTag campfire = new CompoundTag(new LinkedHashMap<>());
-        campfire.put( "name", new StringTag( "minecraft:campfire" ) );
-        campfire.put( "id", new IntTag( 44 ) );
 
-        CompoundTag campfireData = new CompoundTag(new LinkedHashMap<>());
-        campfireData.put( "scaling", new StringTag( "when_caused_by_living_non_player" ) );
-        campfireData.put( "message_id", new StringTag( "inFire" ) );
-        campfireData.put( "exhaustion", new FloatTag( 0.1f ) );
-        campfire.put( "element", campfireData );
 
-        list.getValue().add( campfire );
+        list.getValue().add( createDamageTypes( "minecraft:campfire", "inFire", 44 ) );
 
 
         if ( version >= ProtocolConstants.MINECRAFT_1_21_2 )
         {
-            CompoundTag enderpearl = new CompoundTag(new LinkedHashMap<>());
-            enderpearl.put( "name", new StringTag( "minecraft:ender_pearl" ) );
-            enderpearl.put( "id", new IntTag( 45 ) );
+            list.getValue().add( createDamageTypes( "minecraft:ender_pearl", "fall", 45 ) );
+            list.getValue().add( createDamageTypes( "minecraft:mace_smash", "mace_smash", 46 ) );
 
-            CompoundTag maceSmash = new CompoundTag(new LinkedHashMap<>());
-            maceSmash.put( "name", new StringTag( "minecraft:mace_smash" ) );
-            maceSmash.put( "id", new IntTag( 46 ) );
-
-            CompoundTag enderpearlData = new CompoundTag(new LinkedHashMap<>());
-            enderpearlData.put( "scaling", new StringTag( "when_caused_by_living_non_player" ) );
-            enderpearlData.put( "message_id", new StringTag( "fall" ) );
-            enderpearlData.put( "exhaustion", new FloatTag( 0.0f ) );
-
-            CompoundTag maceSmashData = new CompoundTag(new LinkedHashMap<>());
-            maceSmashData.put( "scaling", new StringTag( "when_caused_by_living_non_player" ) );
-            maceSmashData.put( "message_id", new StringTag( "mace_smash" ) );
-            maceSmashData.put( "exhaustion", new FloatTag( 0.1f ) );
-
-            enderpearl.put( "element", enderpearlData );
-            maceSmash.put( "element", maceSmashData );
-            list.getValue().add( enderpearl );
-            list.getValue().add( maceSmash );
+            if ( version >= ProtocolConstants.MINECRAFT_26_1 )
+            {
+                list.getValue().add( createDamageTypes( "minecraft:spear", "spear", 47 ) );
+            }
         }
+    }
+
+    private static CompoundTag createDamageTypes(String name, String messageId, int id)
+    {
+        CompoundTag tag = new CompoundTag( new LinkedHashMap<>() );
+        tag.put( "name", new StringTag( name ) );
+        tag.put( "id", new IntTag( id ) );
+
+        CompoundTag data = new CompoundTag( new LinkedHashMap<>() );
+        data.put( "scaling", new StringTag( "when_caused_by_living_non_player" ) );
+        data.put( "message_id", new StringTag( messageId ) );
+        data.put( "exhaustion", new FloatTag( 0.1f ) );
+
+
+        tag.put( "element", data );
+        return tag;
     }
 
     @SneakyThrows
@@ -155,25 +141,25 @@ public class Dimension
 
         if ( protocolVersion <= ProtocolConstants.MINECRAFT_1_16_1 )
         {
-            CompoundTag dimensions = new CompoundTag(new LinkedHashMap<>());
+            CompoundTag dimensions = new CompoundTag( new LinkedHashMap<>() );
             dimensions.put( "dimension", new ListTag( Collections.singletonList( attributes ), Tag.COMPOUND ) );
 
             return new NamedTag( "", dimensions );
         }
 
-        CompoundTag dimensionData = new CompoundTag(new LinkedHashMap<>());
+        CompoundTag dimensionData = new CompoundTag( new LinkedHashMap<>() );
 
         dimensionData.put( "name", new StringTag( key ) );
         dimensionData.put( "id", new IntTag( id ) );
         dimensionData.put( "element", attributes );
 
-        CompoundTag dimensions = new CompoundTag(new LinkedHashMap<>());
+        CompoundTag dimensions = new CompoundTag( new LinkedHashMap<>() );
         dimensions.put( "type", new StringTag( "minecraft:dimension_type" ) );
         dimensions.put( "value", new ListTag( Collections.singletonList( dimensionData ), Tag.COMPOUND ) );
 
-        CompoundTag root = new CompoundTag(new LinkedHashMap<>());
+        CompoundTag root = new CompoundTag( new LinkedHashMap<>() );
         root.put( "minecraft:dimension_type", dimensions );
-        root.put( "minecraft:worldgen/biome", createBiomeRegistry(protocolVersion) );
+        root.put( "minecraft:worldgen/biome", createBiomeRegistry( protocolVersion ) );
 
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_19_4 )
         {
@@ -187,6 +173,11 @@ public class Dimension
             if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_2 )
             {
                 damage = damageType1_21_2;
+            }
+
+            if ( protocolVersion >= ProtocolConstants.MINECRAFT_26_1 )
+            {
+                damage = damageType26_1;
             }
 
 
@@ -203,15 +194,41 @@ public class Dimension
         }
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_5 )
         {
+
             root.put( "minecraft:frog_variant", createEntityVariant( protocolVersion, "minecraft:frog_variant", "frog", true, "warm" ) );
-            root.put( "minecraft:cat_variant", createEntityVariant( protocolVersion, "minecraft:cat_variant", "cat", false, "black" ) );
+            root.put( "minecraft:cat_variant", createEntityVariant( protocolVersion, "minecraft:cat_variant", "cat", protocolVersion >= ProtocolConstants.MINECRAFT_26_1, "black" ) );
             root.put( "minecraft:pig_variant", createEntityVariant( protocolVersion, "minecraft:pig_variant", "pig", true, "temperate" ) );
             root.put( "minecraft:cow_variant", createEntityVariant( protocolVersion, "minecraft:cow_variant", "cow", true, "temperate" ) );
-            root.put( "minecraft:minecraft:chicken_variant", createEntityVariant( protocolVersion, "minecraft:chicken_variant", "chicken", true, "temperate" ) );
-            root.put( "minecraft:wolf_sound_variant", createWoldSoundVariant( protocolVersion ) );
+            root.put( "minecraft:chicken_variant", createEntityVariant( protocolVersion, "minecraft:chicken_variant", "chicken", true, "temperate", "cold", "warm" ) );
+
+
+            if ( protocolVersion < ProtocolConstants.MINECRAFT_26_1 )
+            {
+                root.put( "minecraft:wolf_sound_variant", createLegacyWoldSoundVariant() );
+            }
         }
-        if (protocolVersion >= ProtocolConstants.MINECRAFT_1_21_11 ) {
-            root.put( "zombie_nautilus_variant", createEntityVariant( protocolVersion, "zombie_nautilus_variant", "zombie_nautilus", true, "temperate" ) );
+
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_11 )
+        {
+            root.put( "minecraft:zombie_nautilus_variant", createEntityVariant( protocolVersion, "zombie_nautilus_variant", "zombie_nautilus", false, "temperate" ) );
+        }
+
+
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_26_1 )
+        {
+            root.put( "minecraft:wolf_sound_variant", createRegistryTag( "minecraft:wolf_sound_variant", Map.of( "minecraft:angry", createSoundVariantTag( Map.of( "ambient_sound", "minecraft:entity.wolf_angry.ambient", "hurt_sound", "minecraft:entity.wolf_angry.hurt", "death_sound", "minecraft:entity.wolf_angry.death", "step_sound", "minecraft:entity.wolf.step", "whine_sound", "minecraft:entity.wolf_angry.whine", "growl_sound", "minecraft:entity.wolf_angry.growl", "pant_sound", "minecraft:entity.wolf_angry.pant" ) ) ) ) );
+            root.put( "minecraft:cat_sound_variant", createRegistryTag( "minecraft:cat_sound_variant", Map.of( "minecraft:classic", createSoundVariantTag( Map.of( "hiss_sound", "minecraft:entity.cat.hiss", "eat_sound", "minecraft:entity.cat.eat", "purreow_sound", "minecraft:entity.cat.purreow", "ambient_sound", "minecraft:entity.cat.ambient", "hurt_sound", "minecraft:entity.cat.hurt", "death_sound", "minecraft:entity.cat.death", "beg_for_food_sound", "minecraft:entity.cat.beg_for_food", "purr_sound", "minecraft:entity.cat.purr", "stray_ambient_sound", "minecraft:entity.cat.ambient" ) ) ) ) );
+            root.put( "minecraft:chicken_sound_variant", createRegistryTag( "minecraft:chicken_sound_variant", Map.of( "minecraft:classic", createSoundVariantTag( Map.of( "ambient_sound", "minecraft:entity.chicken.ambient", "hurt_sound", "minecraft:entity.chicken.hurt", "death_sound", "minecraft:entity.chicken.death", "step_sound", "minecraft:entity.chicken.step" ) ) ) ) );
+            root.put( "minecraft:cow_sound_variant", createСowSoundVariant() );
+            root.put( "minecraft:pig_sound_variant", createRegistryTag( "minecraft:pig_sound_variant", Map.of( "minecraft:classic", createSoundVariantTag( Map.of( "ambient_sound", "minecraft:entity.pig.ambient", "hurt_sound", "minecraft:entity.pig.hurt", "death_sound", "minecraft:entity.pig.death", "step_sound", "minecraft:entity.pig.step", "eat_sound", "minecraft:entity.pig.eat" ) ) ) ) );
+
+
+            root.put( "minecraft:world_clock", createRegistryTag( "minecraft:world_clock", Map.of( "minecraft:overworld", new CompoundTag( new LinkedHashMap<>() ) ) ) );
+
+            root.put( "minecraft:trim_material", createTrimMatrialsRegistry( protocolVersion ) );
+            root.put( "minecraft:jukebox_song", createJukeBoxRegistry( protocolVersion ) );
+            root.put( "minecraft:instrument", createInstrumentRegistry( protocolVersion ) );
+            root.put( "minecraft:timeline", createTimelineRegistry( protocolVersion ) );
         }
 
         return protocolVersion >= ProtocolConstants.MINECRAFT_1_20_2 ? root : new NamedTag( "", root );
@@ -273,66 +290,101 @@ public class Dimension
             elements.put( "cloud_height", new IntTag( 192 ) );
         }
 
+        CompoundTag attributes = new CompoundTag( new LinkedHashMap<>() );
 
-        if (protocolVersion >= ProtocolConstants.MINECRAFT_1_21_11) {
-            //TODO: timelines???
-            CompoundTag attributes = new CompoundTag(new LinkedHashMap<>());
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_11 )
+        {
 
-
-            if (!natural) {
-                attributes.put("visual/sky_light_factor", new FloatTag(0F));
+            if ( !natural )
+            {
+                attributes.put( "visual/sky_light_factor", new FloatTag( 0F ) );
             }
-            if (ultrawarm) {
-                CompoundTag defaultDripstoneParticle = new CompoundTag();
-                defaultDripstoneParticle.put("type", new StringTag("dripping_dripstone_lava"));
-                attributes.put("visual/default_dripstone_particle", defaultDripstoneParticle);
+            if ( ultrawarm )
+            {
+                CompoundTag defaultDripstoneParticle = new CompoundTag( new LinkedHashMap<>() );
+                defaultDripstoneParticle.put( "type", new StringTag( "dripping_dripstone_lava" ) );
+                attributes.put( "visual/default_dripstone_particle", defaultDripstoneParticle );
             }
 
 
-            if (elements.containsKey( "cloud_height" )) {
+            if ( elements.containsKey( "cloud_height" ) )
+            {
                 elements.remove( "cloud_height" );
-                attributes.put( "visual/cloud_height", new FloatTag(192F) );
-                attributes.put( "visual/cloud_color", new StringTag("#ccffffff") );
+                attributes.put( "visual/cloud_height", new FloatTag( 192F ) );
+                attributes.put( "visual/cloud_color", new StringTag( "#ccffffff" ) );
             }
 
 
             elements.remove( "has_raids" );
             attributes.put( "gameplay/can_start_raid", hasRaids ? new ByteTag( (byte) 1 ) : new ByteTag( (byte) 0 ) );
 
-            elements.remove( "piglin_safe");
+            elements.remove( "piglin_safe" );
             attributes.put( "gameplay/piglins_zombify", piglinSafe ? new ByteTag( (byte) 0 ) : new ByteTag( (byte) 1 ) );
 
-            elements.remove( "respawn_anchor_works");
+            elements.remove( "respawn_anchor_works" );
             attributes.put( "gameplay/respawn_anchor_works", respawnAnchorWorks ? new ByteTag( (byte) 1 ) : new ByteTag( (byte) 0 ) );
 
             attributes.put( "gameplay/fast_lava", ultrawarm ? new ByteTag( (byte) 1 ) : new ByteTag( (byte) 0 ) );
             attributes.put( "gameplay/water_evaporates", ultrawarm ? new ByteTag( (byte) 1 ) : new ByteTag( (byte) 0 ) );
 
 
-            if (key.equals( "minecraft:overworld" )) {
+            if ( key.equals( "minecraft:overworld" ) )
+            {
+                attributes.put( "visual/sky_color", new StringTag( "#78a7ff" ) );
+                attributes.put( "visual/fog_color", new StringTag( "#c0d8ff" ) );
+            }
+
+            if ( key.equals( "minecraft:the_nether" ) )
+            {
+                elements.put( "skybox", new StringTag( "none" ) );
+                elements.put( "cardinal_light", new StringTag( "nether" ) );
+                attributes.put( "visual/sky_light_color", new StringTag( "#7a7aff" ) );
+                attributes.put( "visual/fog_start_distance", new FloatTag( 10F ) );
+                attributes.put( "visual/fog_end_distance", new FloatTag( 96F ) );
+                attributes.put( "gameplay/sky_light_level", new FloatTag( 4F ) );
+            }
+            if ( key.equals( "minecraft:the_end" ) )
+            {
+                elements.put( "skybox", new StringTag( "end" ) );
+
+                attributes.put( "visual/fog_color", new StringTag( "#181318" ) );
+                attributes.put( "visual/sky_color", new StringTag( "#000000" ) );
+                attributes.put( "visual/sky_light_color", new StringTag( "#e580ff" ) );
+
 
             }
 
-            if (key.equals( "minecraft:the_nether" )) {
-                elements.put( "skybox", new StringTag("none") );
-                elements.put( "cardinal_light", new StringTag("nether") );
-                attributes.put( "visual/sky_light_color", new StringTag("#7a7aff") );
-                attributes.put( "visual/fog_start_distance", new FloatTag(10F) );
-                attributes.put( "visual/fog_end_distance", new FloatTag(96F) );
-                attributes.put( "gameplay/sky_light_level", new FloatTag(4F) );
-            }
-            if (key.equals( "minecraft:the_end" )) {
-                elements.put( "skybox", new StringTag("end") );
-
-                attributes.put( "visual/fog_color", new StringTag("#181318") );
-                attributes.put( "visual/sky_color", new StringTag("#000000") );
-                attributes.put( "visual/sky_light_color", new StringTag("#e580ff") );
-            }
-
-            elements.put("attributes", attributes);
+            elements.put( "attributes", attributes );
         }
 
-        CompoundTag tag = new CompoundTag(new LinkedHashMap<>());
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_26_1 )
+        {
+            if ( key.equals( "minecraft:overworld" ) )
+            {
+                //elements.put( "timelines", new StringTag( "#minecraft:in_overworld" ) );
+                elements.put( "default_clock", new StringTag( "minecraft:overworld" ) );
+                elements.put( "has_ender_dragon_fight", new ByteTag( (byte) 0 ) );
+
+                attributes.put( "visual/ambient_light_color", new IntTag( -16119286 ) );
+
+
+            }
+            if ( key.equals( "minecraft:the_nether" ) )
+            {
+                elements.put( "has_ender_dragon_fight", new ByteTag( (byte) 0 ) );
+                attributes.put( "visual/ambient_light_color", new IntTag( -13621215 ) );
+
+            }
+            if ( key.equals( "minecraft:the_end" ) )
+            {
+                elements.put( "default_clock", new StringTag( "minecraft:overworld" ) );
+                elements.put( "has_ender_dragon_fight", new ByteTag( (byte) 1 ) );
+                attributes.put( "visual/ambient_light_color", new IntTag( -12630209 ) );
+
+            }
+        }
+
+        CompoundTag tag = new CompoundTag( new LinkedHashMap<>() );
 
         for ( Map.Entry<String, TypedTag> entry : elements.entrySet() )
         {
@@ -344,7 +396,7 @@ public class Dimension
 
     private CompoundTag createBiomeRegistry(int version)
     {
-        CompoundTag root = new CompoundTag(new LinkedHashMap<>());
+        CompoundTag root = new CompoundTag( new LinkedHashMap<>() );
         root.put( "type", new StringTag( "minecraft:worldgen/biome" ) );
         List<TypedTag> biomes = new ArrayList<>();
         for ( Biome biome : this.biomes )
@@ -358,27 +410,21 @@ public class Dimension
     private CompoundTag createChatRegistry(int version)
     {
 
-        CompoundTag root = new CompoundTag(new LinkedHashMap<>());
-        root.put( "type", new StringTag( "minecraft:chat_type" ) );
-        CompoundTag systemChat = new CompoundTag(new LinkedHashMap<>());
-        systemChat.put( "name", new StringTag( "minecraft:system" ) );
-        systemChat.put( "id", new IntTag( 1 ) );
-        CompoundTag element = new CompoundTag(new LinkedHashMap<>());
 
-
-        CompoundTag chat = new CompoundTag(new LinkedHashMap<>());
+        CompoundTag element = new CompoundTag( new LinkedHashMap<>() );
+        CompoundTag chat = new CompoundTag( new LinkedHashMap<>() );
         if ( version >= ProtocolConstants.MINECRAFT_1_19_1 )
         {
-            chat.put( "style", new CompoundTag(new LinkedHashMap<>()) );
+            chat.put( "style", new CompoundTag( new LinkedHashMap<>() ) );
             chat.put( "translation_key", new StringTag( "chat.type.system" ) );
             chat.put( "parameters", new ListTag( Arrays.asList( new StringTag( "sender" ), new StringTag( "content" ) ), Tag.STRING ) );
         }
 
         element.put( "chat", chat );
-        CompoundTag narration = new CompoundTag(new LinkedHashMap<>());
+        CompoundTag narration = new CompoundTag( new LinkedHashMap<>() );
         if ( version >= ProtocolConstants.MINECRAFT_1_19_1 )
         {
-            narration.put( "style", new CompoundTag(new LinkedHashMap<>()) );
+            narration.put( "style", new CompoundTag( new LinkedHashMap<>() ) );
             narration.put( "translation_key", new StringTag( "chat.type.system.narrate" ) );
             narration.put( "parameters", new ListTag( Arrays.asList( new StringTag( "sender" ), new StringTag( "content" ) ), Tag.STRING ) );
         } else
@@ -386,42 +432,90 @@ public class Dimension
             narration.put( "priority", new StringTag( "system" ) );
         }
         element.put( "narration", narration );
-        systemChat.put( "element", element );
-        root.put( "value", new ListTag( Arrays.asList( systemChat ), Tag.COMPOUND ) );
+        CompoundTag root = createRegistryTag( "minecraft:chat_type", Map.of( "minecraft:system", element ), 1 );
         return root;
+    }
+
+
+    private CompoundTag createTrimMatrialsRegistry(int version)
+    {
+        CompoundTag element = new CompoundTag( new LinkedHashMap<>() );
+        element.put( "asset_name", new StringTag( "amethyst" ) );
+
+        CompoundTag description = new CompoundTag( new LinkedHashMap<>() );
+        description.put( "color", new StringTag( "#9A5CC6" ) );
+        description.put( "translate", new StringTag( "trim_material.minecraft.amethyst" ) );
+        element.put( "description", description );
+
+
+        Map<String, CompoundTag> values = new HashMap<>();
+        for (String key : Arrays.asList( "quartz", "iron", "netherite", "redstone", "copper", "gold", "emerald", "diamond", "lapis", "amethyst", "resin" )) {
+            values.put( key, element );
+        }
+
+        return createRegistryTag( "minecraft:trim_material", values);
+    }
+
+
+    private CompoundTag createJukeBoxRegistry(int version)
+    {
+        CompoundTag element = new CompoundTag( new LinkedHashMap<>() );
+        element.put( "sound_event", new StringTag( "minecraft:music_disc.11" ) );
+        element.put( "length_in_seconds", new FloatTag( 71F ) );
+        element.put( "comparator_output", new IntTag( 11 ) );
+
+        CompoundTag description = new CompoundTag( new LinkedHashMap<>() );
+        description.put( "translate", new StringTag( "jukebox_song.minecraft.11" ) );
+        element.put( "description", description );
+
+        Map<String, CompoundTag> values = new HashMap<>();
+        for (String key : Arrays.asList("11", "13", "5", "blocks", "cat", "chirp", "far", "mall", "mellohi", "otherside", "pigstep", "relic", "stal", "strad", "wait", "ward", "creator", "creator_music_box", "lava_chicken", "tears", "precipice")) {
+            values.put( key, element );
+        }
+
+
+        return createRegistryTag( "minecraft:jukebox_song", values );
+    }
+
+
+    private CompoundTag createTimelineRegistry(int version)
+    {
+        CompoundTag element = new CompoundTag( new LinkedHashMap<>() );
+        element.put( "clock", new StringTag( "minecraft:overworld" ) );
+        element.put( "period_ticks", new FloatTag( 24000F ) );
+
+        return createRegistryTag( "minecraft:timeline", Map.of( "minecraft:day", element ) );
+    }
+
+
+    private CompoundTag createInstrumentRegistry(int version)
+    {
+        CompoundTag element = new CompoundTag( new LinkedHashMap<>() );
+        element.put( "sound_event", new StringTag( "minecraft:item.goat_horn.sound.0" ) );
+        element.put( "range", new FloatTag( 256F ) );
+        element.put( "use_duration", new FloatTag( 7F ) );
+
+        CompoundTag description = new CompoundTag( new LinkedHashMap<>() );
+        description.put( "translate", new StringTag( "instrument.minecraft.ponder_goat_horn" ) );
+        element.put( "description", description );
+
+        return createRegistryTag( "minecraft:instrument", Map.of( "minecraft:ponder_goat_horn", element ) );
     }
 
 
     private CompoundTag createPaintingVariant(int version)
     {
-
-        CompoundTag root = new CompoundTag(new LinkedHashMap<>());
-        root.put( "type", new StringTag( "minecraft:painting_variant" ) );
-        CompoundTag alban = new CompoundTag(new LinkedHashMap<>());
-        alban.put( "name", new StringTag( "minecraft:alban" ) );
-        alban.put( "id", new IntTag( 0 ) );
-
-        CompoundTag paintingVariant = new CompoundTag(new LinkedHashMap<>());
+        CompoundTag paintingVariant = new CompoundTag( new LinkedHashMap<>() );
         paintingVariant.put( "width", new IntTag( 1 ) );
         paintingVariant.put( "height", new IntTag( 1 ) );
         paintingVariant.put( "asset_id", new StringTag( "minecraft:alban" ) );
 
-        alban.put( "element", paintingVariant );
-
-        root.put( "value", new ListTag( Arrays.asList( alban ), Tag.COMPOUND ) );
-        return root;
+        return createRegistryTag( "minecraft:painting_variant", Map.of( "minecraft:alban", paintingVariant ) );
     }
 
     private CompoundTag createWoldVariant(int version)
     {
-
-        CompoundTag root = new CompoundTag(new LinkedHashMap<>());
-        root.put( "type", new StringTag( "minecraft:wolf_variant" ) );
-        CompoundTag ashen = new CompoundTag(new LinkedHashMap<>());
-        ashen.put( "name", new StringTag( "minecraft:ashen" ) );
-        ashen.put( "id", new IntTag( 0 ) );
-
-        CompoundTag ashenProperties = new CompoundTag(new LinkedHashMap<>());
+        CompoundTag ashenProperties = new CompoundTag( new LinkedHashMap<>() );
         if ( version < ProtocolConstants.MINECRAFT_1_21_5 )
         {
             ashenProperties.put( "wild_texture", new StringTag( "minecraft:entity/wolf/wolf_ashen" ) );
@@ -430,39 +524,48 @@ public class Dimension
             ashenProperties.put( "biomes", new ListTag( Arrays.asList( new StringTag( "minecraft:plains" ) ), Tag.STRING ) );
         } else
         {
-            CompoundTag assets = new CompoundTag(new LinkedHashMap<>());
+            CompoundTag assets = new CompoundTag( new LinkedHashMap<>() );
             assets.put( "wild", new StringTag( "minecraft:entity/wolf/wolf_ashen" ) );
             assets.put( "tame", new StringTag( "minecraft:entity/wolf/wolf_ashen_tame" ) );
             assets.put( "angry", new StringTag( "minecraft:entity/wolf/wolf_ashen_angry" ) );
             ashenProperties.put( "assets", assets );
+            if ( version >= ProtocolConstants.MINECRAFT_26_1 )
+            {
+                ashenProperties.put( "baby_assets", assets );
+            }
         }
+        return createRegistryTag( "minecraft:wolf_variant", Map.of( "minecraft:ashen", ashenProperties ) );
 
-        ashen.put( "element", ashenProperties );
-
-        root.put( "value", new ListTag( Arrays.asList( ashen ), Tag.COMPOUND ) );
-        return root;
     }
 
 
     private CompoundTag createEntityVariant(int version, String type, String entityName, boolean suffixedWithOwnName, String... entries)
     {
-        CompoundTag root = new CompoundTag(new LinkedHashMap<>());
+        CompoundTag root = new CompoundTag( new LinkedHashMap<>() );
         root.put( "type", new StringTag( type ) );
 
         List<TypedTag> values = new ArrayList<>();
         for ( String entity : entries )
         {
-            CompoundTag element = new CompoundTag(new LinkedHashMap<>());
+            CompoundTag element = new CompoundTag( new LinkedHashMap<>() );
             String assetId = "entity/" + entityName + "/" + entity;
             if ( suffixedWithOwnName )
             {
-                // Because frogs have that...
-                assetId = assetId + "_" + entityName;
+                if ( version >= ProtocolConstants.MINECRAFT_26_1 )
+                {
+                    assetId = "entity/" + entityName + "/" + entityName + "_" + entity;
+                } else
+                {
+                    assetId = assetId + "_" + entityName;
+                }
             }
             element.put( "asset_id", new StringTag( assetId ) );
+            if ( version >= ProtocolConstants.MINECRAFT_26_1 )
+            {
+                element.put( "baby_asset_id", new StringTag( assetId + "_baby" ) );
+            }
 
-
-            CompoundTag variant = new CompoundTag(new LinkedHashMap<>());
+            CompoundTag variant = new CompoundTag( new LinkedHashMap<>() );
             variant.put( "name", new StringTag( "minecraft:" + entity ) );
             variant.put( "id", new IntTag( values.size() ) );
             variant.put( "element", element );
@@ -472,16 +575,50 @@ public class Dimension
         return root;
     }
 
-    private CompoundTag createWoldSoundVariant(int version)
+
+    private CompoundTag createSoundVariantTag(Map<String, String> map)
     {
-        CompoundTag root = new CompoundTag(new LinkedHashMap<>());
-        root.put( "type", new StringTag( "minecraft:wolf_sound_variant" ) );
-        CompoundTag angrySound = new CompoundTag(new LinkedHashMap<>());
-        angrySound.put( "name", new StringTag( "minecraft:angry" ) );
-        angrySound.put( "id", new IntTag( 0 ) );
+        CompoundTag sounds = new CompoundTag( new LinkedHashMap<>() );
+        map.forEach( (key, value) -> {
+            sounds.put( key, new StringTag( value ) );
+        } );
+        CompoundTag root = new CompoundTag( new LinkedHashMap<>() );
+        root.put( "adult_sounds", sounds );
+        root.put( "baby_sounds", sounds );
+        return root;
+    }
 
-        CompoundTag angrySoundVariant = new CompoundTag(new LinkedHashMap<>());
 
+    private CompoundTag createRegistryTag(String registryName, Map<String, CompoundTag> elements)
+    {
+        return createRegistryTag( registryName, elements, 0 );
+
+    }
+
+    private CompoundTag createRegistryTag(String registryName, Map<String, CompoundTag> elements, int startId)
+    {
+        int id = startId;
+        List<TypedTag> values = new ArrayList<>();
+        for ( Entry<String, CompoundTag> tag : elements.entrySet() )
+        {
+            CompoundTag compoundTag = new CompoundTag( new LinkedHashMap<>() );
+            compoundTag.put( "id", new IntTag( id++ ) );
+            compoundTag.put( "name", new StringTag( tag.getKey() ) );
+            compoundTag.put( "element", tag.getValue() );
+            values.add( compoundTag );
+        }
+
+        CompoundTag root = new CompoundTag( new LinkedHashMap<>() );
+        root.put( "type", new StringTag( registryName ) );
+        root.put( "value", new ListTag( values, Tag.COMPOUND ) );
+        return root;
+
+    }
+
+    private CompoundTag createLegacyWoldSoundVariant()
+    {
+
+        CompoundTag angrySoundVariant = new CompoundTag( new LinkedHashMap<>() );
         angrySoundVariant.put( "ambient_sound", new StringTag( "minecraft:entity.wolf_angry.ambient" ) );
         angrySoundVariant.put( "death_sound", new StringTag( "minecraft:entity.wolf_angry.death" ) );
         angrySoundVariant.put( "growl_sound", new StringTag( "minecraft:entity.wolf_angry.growl" ) );
@@ -489,25 +626,33 @@ public class Dimension
         angrySoundVariant.put( "pant_sound", new StringTag( "minecraft:entity.wolf_angry.pant" ) );
         angrySoundVariant.put( "whine_sound", new StringTag( "minecraft:entity.wolf_angry.whine" ) );
 
+        return createRegistryTag( "minecraft:wolf_sound_variant", Map.of( "minecraft:angry", angrySoundVariant ) );
+    }
 
-        angrySound.put( "element", angrySoundVariant );
+    private CompoundTag createСowSoundVariant()
+    {
 
-        root.put( "value", new ListTag( Arrays.asList( angrySound ), Tag.COMPOUND ) );
-        return root;
+        CompoundTag angrySoundVariant = new CompoundTag( new LinkedHashMap<>() );
+        angrySoundVariant.put( "ambient_sound", new StringTag( "minecraft:entity.cow.ambient" ) );
+        angrySoundVariant.put( "death_sound", new StringTag( "minecraft:entity.cow.death" ) );
+        angrySoundVariant.put( "hurt_sound", new StringTag( "minecraft:entity.cow.hurt" ) );
+        angrySoundVariant.put( "step_sound", new StringTag( "minecraft:entity.cow.step" ) );
+
+        return createRegistryTag( "minecraft:cow_sound_variant", Map.of( "minecraft:classic", angrySoundVariant ) );
     }
 
 
     private CompoundTag encodeBiome(Biome biome, int version)
     {
-        CompoundTag biomeTag = new CompoundTag(new LinkedHashMap<>());
+        CompoundTag biomeTag = new CompoundTag( new LinkedHashMap<>() );
 
         biomeTag.put( "name", new StringTag( biome.getName() ) );
         biomeTag.put( "id", new IntTag( biome.getId() ) );
 
-        CompoundTag element = new CompoundTag(new LinkedHashMap<>());
+        CompoundTag element = new CompoundTag( new LinkedHashMap<>() );
         element.put( "precipitation", new StringTag( biome.getPrecipitation() ) );
 
-        element.put( "has_precipitation", new ByteTag( (byte) (biome.getPrecipitation().equals( "none" ) ? 0 : 1) ) );
+        element.put( "has_precipitation", new ByteTag( (byte) ( biome.getPrecipitation().equals( "none" ) ? 0 : 1 ) ) );
 
         element.put( "depth", new FloatTag( biome.getDepth() ) );
         element.put( "temperature", new FloatTag( biome.getTemperature() ) );
@@ -529,11 +674,12 @@ public class Dimension
             effects.put( "foliage_color", new IntTag( biome.getFoliage_color() ) );
         }
 
-        if (version >= ProtocolConstants.MINECRAFT_1_21_11) {
-            CompoundTag attributes = new CompoundTag(new LinkedHashMap<>());
+        if ( version >= ProtocolConstants.MINECRAFT_1_21_11 )
+        {
+            CompoundTag attributes = new CompoundTag( new LinkedHashMap<>() );
             effects.remove( "sky_color" );
             attributes.put( "visual/sky_color", new IntTag( biome.getSky_color() ) );
-            if (!key.equals( "minecraft:the_end" ))
+            if ( !key.equals( "minecraft:the_end" ) )
             {
                 effects.remove( "water_fog_color" );
                 effects.remove( "fog_color" );
@@ -544,8 +690,7 @@ public class Dimension
         }
 
 
-
-        CompoundTag moodSound = new CompoundTag(new LinkedHashMap<>());
+        CompoundTag moodSound = new CompoundTag( new LinkedHashMap<>() );
         moodSound.put( "tick_delay", new IntTag( biome.getTick_delay() ) );
         moodSound.put( "offset", new DoubleTag( biome.getOffset() ) );
         moodSound.put( "block_search_extent", new IntTag( biome.getBlock_search_extent() ) );
@@ -553,7 +698,7 @@ public class Dimension
 
         effects.put( "mood_sound", moodSound );
 
-        element.put( "effects", new CompoundTag(effects) );
+        element.put( "effects", new CompoundTag( effects ) );
         biomeTag.put( "element", element );
         return biomeTag;
     }
@@ -562,26 +707,7 @@ public class Dimension
     @Getter
     public enum Biome
     {
-        PLAINS( "minecraft:plains", 0, "rain", 0.125f, 0.8f, 0.05f,
-            0.4f, "plains", 7907327, 329011, 12638463,
-            4159204, 6000, 2.0d, 8, "minecraft:ambient.cave",
-            null, Integer.MIN_VALUE ),
-        SWAMP( "minecraft:swamp", 1, "rain", -0.2f, 0.8f, 0.1f, 0.9f,
-            "swamp", 7907327, 2302743, 12638463, 6388580,
-            6000, 2.0d, 8, "minecraft:ambient.cave", "swamp",
-            6975545 ),
-        SWAMP_HILLS( "minecraft:swamp_hills", 2, "rain", -0.1f, 0.8f, 0.3f,
-            0.9f, "swamp", 7907327, 2302743, 12638463,
-            6388580, 6000, 2.0d, 8, "minecraft:ambient.cave",
-            "swamp", 6975545 ),
-        NETHER_WASTES( "minecraft:nether_wastes", 3, "none", 0.1f, 2.0f, 0.2f,
-            0.0f, "nether", 7254527, 329011, 3344392,
-            4159204, 6000, 2.0d, 8, "minecraft:ambient.cave",
-            "swamp", 6975545 ),
-        THE_END( "minecraft:the_end", 4, "none", 0.1f, 0.5f, 0.2f,
-            0.5f, "the_end", 7907327, 10518688, 12638463,
-            4159204, 6000, 2.0d, 8, "minecraft:ambient.cave",
-            "swamp", 6975545 );
+        PLAINS( "minecraft:plains", 0, "rain", 0.125f, 0.8f, 0.05f, 0.4f, "plains", 7907327, 329011, 12638463, 4159204, 6000, 2.0d, 8, "minecraft:ambient.cave", null, Integer.MIN_VALUE ), SWAMP( "minecraft:swamp", 1, "rain", -0.2f, 0.8f, 0.1f, 0.9f, "swamp", 7907327, 2302743, 12638463, 6388580, 6000, 2.0d, 8, "minecraft:ambient.cave", "swamp", 6975545 ), SWAMP_HILLS( "minecraft:swamp_hills", 2, "rain", -0.1f, 0.8f, 0.3f, 0.9f, "swamp", 7907327, 2302743, 12638463, 6388580, 6000, 2.0d, 8, "minecraft:ambient.cave", "swamp", 6975545 ), NETHER_WASTES( "minecraft:nether_wastes", 3, "none", 0.1f, 2.0f, 0.2f, 0.0f, "nether", 7254527, 329011, 3344392, 4159204, 6000, 2.0d, 8, "minecraft:ambient.cave", "swamp", 6975545 ), THE_END( "minecraft:the_end", 4, "none", 0.1f, 0.5f, 0.2f, 0.5f, "the_end", 7907327, 10518688, 12638463, 4159204, 6000, 2.0d, 8, "minecraft:ambient.cave", "swamp", 6975545 );
         private final String name;
         private final int id;
         //elements
@@ -604,4 +730,5 @@ public class Dimension
         private final String grass_color_modiefer;
         private final int foliage_color;
     }
+
 }
