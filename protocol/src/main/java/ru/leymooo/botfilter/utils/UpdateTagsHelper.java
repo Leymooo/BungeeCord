@@ -9,7 +9,7 @@ import ru.leymooo.botfilter.packets.UpdateTags.Entry;
 
 public class UpdateTagsHelper
 {
-    private static Map<String, List<String>> REQUIRED_TAGS = Map.of( "minecraft:damage_type", List.of(
+    private static Map<String, List<String>> REQUIRED_TAGS = Map.of("minecraft:damage_type", List.of(
             "minecraft:is_lightning",
             "minecraft:panic_environmental_causes",
             "minecraft:bypasses_invulnerability",
@@ -55,22 +55,23 @@ public class UpdateTagsHelper
             "minecraft:pattern_item/bordure_indented",
             "minecraft:no_item_required",
             "minecraft:pattern_item/globe",
-            "minecraft:pattern_item/guster" ) );
+            "minecraft:pattern_item/guster"),
+        "minecraft:block", List.of("infiniburn_overworld", "infiniburn_nether", "infiniburn_end"));
 
 
     public static UpdateTags createPacket()
     {
 
         Map<String, List<Entry>> data = new HashMap<>();
-        REQUIRED_TAGS.forEach( (key, value) -> {
+        REQUIRED_TAGS.forEach((key, value) -> {
 
             List<UpdateTags.Entry> entries = new ArrayList<>();
-            for ( String tag : value )
+            for (String tag : value)
             {
-                entries.add( new Entry( tag, new ArrayList<>() ) );
+                entries.add(new Entry(tag, new ArrayList<>()));
             }
-            data.put( key, entries );
-        } );
-        return new UpdateTags( data );
+            data.put(key, entries);
+        });
+        return new UpdateTags(data);
     }
 }

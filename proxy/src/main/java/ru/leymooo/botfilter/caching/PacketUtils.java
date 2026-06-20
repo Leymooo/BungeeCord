@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.chat.TextComponent;
 import net.md_5.bungee.netty.ChannelWrapper;
@@ -46,7 +45,7 @@ public class PacketUtils
     private static final HashMap<Integer, CachedUpdateTags> cachedUpdateTags = new HashMap<>();
 
     public static int PROTOCOLS_COUNT = ProtocolConstants.SUPPORTED_VERSION_IDS.size();
-    public static int CLIENTID = new Random().nextInt( Integer.MAX_VALUE - 100 ) + 50;
+    public static int CLIENT_ENTITY_ID = 1337;
     public static int KEEPALIVE_ID = 9876;
     public static CachedExpPackets expPackets;
     /**
@@ -143,7 +142,7 @@ public class PacketUtils
         }
         DefinedPacket[] packets =
             {
-                new JoinGame( CLIENTID, dimension ), //0
+                new JoinGame( CLIENT_ENTITY_ID, dimension, false ), //0
                 new TimeUpdate( 1, 23700 ), //1
                 new PlayerAbilities( (byte) 6, 0f, 0f ), //2
                 new PlayerPositionAndLook( 7.00, 450, 7.00, 90f, 38f, 9876, false ), //3
@@ -153,9 +152,10 @@ public class PacketUtils
                 new PlayerPositionAndLook( 7.00, 450, 7.00, 90f, 10f, 9876, false ), //7
                 new SetExp( 0, 0, 0 ), //8
                 createPluginMessage(), //9
-                new DefaultSpawnPosition(dimension, 7, 450, 7, 123, 0 ),//10
+                new DefaultSpawnPosition( dimension, 7, 450, 7, 123, 0 ),//10
                 new FinishConfiguration(), //11
                 new GameState( (short) 13, 0f ), //12
+                new JoinGame( CLIENT_ENTITY_ID, dimension, true ) //13
             };
 
 
@@ -164,12 +164,14 @@ public class PacketUtils
             ProtocolConstants.MINECRAFT_1_21, ProtocolConstants.MINECRAFT_1_21_2,
             ProtocolConstants.MINECRAFT_1_21_4, ProtocolConstants.MINECRAFT_1_21_5,
             ProtocolConstants.MINECRAFT_1_21_6, ProtocolConstants.MINECRAFT_1_21_7,
-            ProtocolConstants.MINECRAFT_1_21_9, ProtocolConstants.MINECRAFT_1_21_11, ProtocolConstants.MINECRAFT_26_1 ) )
+            ProtocolConstants.MINECRAFT_1_21_9, ProtocolConstants.MINECRAFT_1_21_11,
+            ProtocolConstants.MINECRAFT_26_1, ProtocolConstants.MINECRAFT_26_2 ) )
         {
             configurationRegistry.put( version, new CachedRegistryData( dimension, version ) );
         }
 
-        for (int version : Arrays.asList( ProtocolConstants.MINECRAFT_26_1 )) {
+        for ( int version : Arrays.asList( ProtocolConstants.MINECRAFT_26_1, ProtocolConstants.MINECRAFT_26_2 ) )
+        {
             cachedUpdateTags.put( version, new CachedUpdateTags( version ) );
         }
 
@@ -358,23 +360,29 @@ public class PacketUtils
         if ( version >= ProtocolConstants.MINECRAFT_1_20_2 )
         {
             configurationRegistry.get( version ).write( channel );
-            if (version >= ProtocolConstants.MINECRAFT_26_1 )
+            if ( version >= ProtocolConstants.MINECRAFT_26_1 )
             {
                 cachedUpdateTags.get( version ).write( channel );
             }
-            channel.write( getCachedPacket( 11 ).get( version ), channel.voidPromise() );
+            channel.write( getCachedPacket( PacketsPosition.FINISH_CONFIGURATION ).get( version ), channel.voidPromise() );
         }
         channel.flush();
     }
 
 
-    public static void spawnPlayer(Channel channel, int version, boolean disableFall, boolean captcha)
+    public static void spawnPlayer(Channel channel, int version, boolean disableFall, boolean captcha, boolean onlineMode)
     {
-        channel.write( getCachedPacket( PacketsPosition.LOGIN ).get( version ), channel.voidPromise() );
+        if ( onlineMode )
+        {
+            channel.write( getCachedPacket( PacketsPosition.LOGIN_ONLINE ).get( version ), channel.voidPromise() );
+        } else
+        {
+            channel.write( getCachedPacket( PacketsPosition.LOGIN_OFFLINE ).get( version ), channel.voidPromise() );
+        }
         channel.write( getCachedPacket( PacketsPosition.PLUGIN_MESSAGE ).get( version ), channel.voidPromise() );
         if ( version >= ProtocolConstants.MINECRAFT_1_20_3 )
         {
-            channel.write( getCachedPacket( 12 ).get( version ), channel.voidPromise() );
+            channel.write( getCachedPacket( PacketsPosition.GAME_STATE ).get( version ), channel.voidPromise() );
         }
         for ( CachedPacket cachedPacket : chunksPackets )
         {

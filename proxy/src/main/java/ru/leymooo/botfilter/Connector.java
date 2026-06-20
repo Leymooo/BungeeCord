@@ -11,7 +11,6 @@ import lombok.Setter;
 import net.md_5.bungee.BungeeCord;
 import net.md_5.bungee.UserConnection;
 import net.md_5.bungee.Util;
-import net.md_5.bungee.compress.PacketDecompressor;
 import net.md_5.bungee.netty.ChannelWrapper;
 import net.md_5.bungee.protocol.PacketWrapper;
 import net.md_5.bungee.protocol.Protocol;
@@ -79,7 +78,7 @@ public class Connector extends MoveHandler
         this.name = userConnection.getName();
         this.channel = userConnection.getCh().getHandle();
         this.userConnection = userConnection;
-        this.userConnection.setClientEntityId( PacketUtils.CLIENTID );
+        this.userConnection.setClientEntityId( PacketUtils.CLIENT_ENTITY_ID);
         this.userConnection.setDimension( 0 );
         this.ip = IPUtils.getAddress( this.userConnection ).getHostAddress();
 
@@ -100,11 +99,11 @@ public class Connector extends MoveHandler
         }
         if ( state == CheckState.CAPTCHA_ON_POSITION_FAILED )
         {
-            PacketUtils.spawnPlayer( channel, userConnection.getPendingConnection().getVersion(), false, false );
+            PacketUtils.spawnPlayer( channel, userConnection.getPendingConnection().getVersion(), false, false, userConnection.getPendingConnection().isOnlineMode() );
             PacketUtils.titles[0].writeTitle( channel, version );
         } else
         {
-            PacketUtils.spawnPlayer( channel, userConnection.getPendingConnection().getVersion(), state == CheckState.ONLY_CAPTCHA, true );
+            PacketUtils.spawnPlayer( channel, userConnection.getPendingConnection().getVersion(), state == CheckState.ONLY_CAPTCHA, true, userConnection.getPendingConnection().isOnlineMode() );
             sendCaptcha();
             PacketUtils.titles[1].writeTitle( channel, version );
         }

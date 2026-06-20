@@ -33,20 +33,22 @@ public class JoinGame extends DefinedPacket
     private boolean normalRespawn = true;
     private boolean debug = false;
     private boolean flat = true;
+    private boolean onlineMode = false;
 
 
     private Dimension dimension;
     public JoinGame()
     {
-        this ( 0, Dimension.OVERWORLD );
+        this ( 1337, Dimension.OVERWORLD, false );
     }
-    public JoinGame(int entityId, Dimension dimension)
+    public JoinGame(int entityId, Dimension dimension, boolean onlineMode)
     {
         this.entityId = entityId;
         this.dimensionId = dimension.getDimensionId();
         this.worldName = dimension.getKey();
         this.worldNames = new HashSet<>( Arrays.asList( dimension.getKey() ) );
         this.dimension = dimension;
+        this.onlineMode = onlineMode;
     }
 
     @Override
@@ -177,6 +179,10 @@ public class JoinGame extends DefinedPacket
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_2 )
         {
             writeVarInt( 60, buf ); //sea level
+        }
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_26_2 )
+        {
+            buf.writeBoolean(onlineMode);
         }
 
         if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_20_5 )

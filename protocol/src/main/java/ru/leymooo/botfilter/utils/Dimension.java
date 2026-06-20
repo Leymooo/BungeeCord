@@ -469,7 +469,7 @@ public class Dimension
         element.put( "description", description );
 
         Map<String, CompoundTag> values = new HashMap<>();
-        for (String key : Arrays.asList("11", "13", "5", "blocks", "cat", "chirp", "far", "mall", "mellohi", "otherside", "pigstep", "relic", "stal", "strad", "wait", "ward", "creator", "creator_music_box", "lava_chicken", "tears", "precipice")) {
+        for (String key : Arrays.asList("11", "13", "5", "blocks", "cat", "chirp", "far", "mall", "mellohi", "otherside", "pigstep", "relic", "stal", "strad", "wait", "ward", "creator", "creator_music_box", "lava_chicken", "tears", "precipice", "bounce")) {
             values.put( key, element );
         }
 
