@@ -1,6 +1,7 @@
 package net.md_5.bungee.protocol.packet;
 
 import io.netty.buffer.ByteBuf;
+import java.util.Optional;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -32,7 +33,7 @@ public class Team extends DefinedPacket
     private Either<String, NameTagVisibility> nameTagVisibility;
     private Either<String, CollisionRule> collisionRule;
     //
-    private int color;
+    private Optional<Integer> color;
     private byte friendlyFire;
     private String[] players;
 
@@ -54,33 +55,45 @@ public class Team extends DefinedPacket
         mode = buf.readByte();
         if ( mode == 0 || mode == 2 )
         {
-            if ( protocolVersion < ProtocolConstants.MINECRAFT_1_13 )
-            {
-                displayName = readEitherBaseComponent( buf, protocolVersion, true );
-                prefix = readEitherBaseComponent( buf, protocolVersion, true );
-                suffix = readEitherBaseComponent( buf, protocolVersion, true );
-            } else
+            if ( protocolVersion >= ProtocolConstants.MINECRAFT_26_2 )
             {
                 displayName = readEitherBaseComponent( buf, protocolVersion, false );
-            }
-            friendlyFire = buf.readByte();
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_5 )
-            {
-                nameTagVisibility = Either.right( NameTagVisibility.BY_ID[readVarInt( buf )] );
-                collisionRule = Either.right( CollisionRule.BY_ID[readVarInt( buf )] );
-            } else
-            {
-                nameTagVisibility = Either.left( readString( buf ) );
-                if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_9 )
-                {
-                    collisionRule = Either.left( readString( buf ) );
-                }
-            }
-            color = ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 ) ? readVarInt( buf ) : buf.readByte();
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
-            {
                 prefix = readEitherBaseComponent( buf, protocolVersion, false );
                 suffix = readEitherBaseComponent( buf, protocolVersion, false );
+                nameTagVisibility = Either.right( NameTagVisibility.BY_ID[readVarInt( buf )] );
+                collisionRule = Either.right( CollisionRule.BY_ID[readVarInt( buf )] );
+                color = readOptional( DefinedPacket::readVarInt, buf );
+                friendlyFire = buf.readByte();
+            } else
+            {
+                if ( protocolVersion < ProtocolConstants.MINECRAFT_1_13 )
+                {
+                    displayName = readEitherBaseComponent( buf, protocolVersion, true );
+                    prefix = readEitherBaseComponent( buf, protocolVersion, true );
+                    suffix = readEitherBaseComponent( buf, protocolVersion, true );
+                } else
+                {
+                    displayName = readEitherBaseComponent( buf, protocolVersion, false );
+                }
+                friendlyFire = buf.readByte();
+                if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_5 )
+                {
+                    nameTagVisibility = Either.right( NameTagVisibility.BY_ID[readVarInt( buf )] );
+                    collisionRule = Either.right( CollisionRule.BY_ID[readVarInt( buf )] );
+                } else
+                {
+                    nameTagVisibility = Either.left( readString( buf ) );
+                    if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_9 )
+                    {
+                        collisionRule = Either.left( readString( buf ) );
+                    }
+                }
+                color = Optional.of( ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 ) ? readVarInt( buf ) : buf.readByte() );
+                if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
+                {
+                    prefix = readEitherBaseComponent( buf, protocolVersion, false );
+                    suffix = readEitherBaseComponent( buf, protocolVersion, false );
+                }
             }
         }
         if ( mode == 0 || mode == 3 || mode == 4 )
@@ -101,34 +114,47 @@ public class Team extends DefinedPacket
         buf.writeByte( mode );
         if ( mode == 0 || mode == 2 )
         {
-            writeEitherBaseComponent( displayName, buf, protocolVersion );
-            if ( protocolVersion < ProtocolConstants.MINECRAFT_1_13 )
+            if ( protocolVersion >= ProtocolConstants.MINECRAFT_26_2 )
             {
+                writeEitherBaseComponent( displayName, buf, protocolVersion );
                 writeEitherBaseComponent( prefix, buf, protocolVersion );
                 writeEitherBaseComponent( suffix, buf, protocolVersion );
-            }
-            buf.writeByte( friendlyFire );
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_5 )
-            {
                 writeVarInt( nameTagVisibility.getRight().ordinal(), buf );
                 writeVarInt( collisionRule.getRight().ordinal(), buf );
-            } else
-            {
-                writeString( nameTagVisibility.getLeft(), buf );
-                if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_9 )
-                {
-                    writeString( collisionRule.getLeft(), buf );
-                }
-            }
+                writeOptional( color, DefinedPacket::writeVarInt, buf );
+                buf.writeByte( friendlyFire );
 
-            if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
-            {
-                writeVarInt( color, buf );
-                writeEitherBaseComponent( prefix, buf, protocolVersion );
-                writeEitherBaseComponent( suffix, buf, protocolVersion );
             } else
             {
-                buf.writeByte( color );
+                writeEitherBaseComponent( displayName, buf, protocolVersion );
+                if ( protocolVersion < ProtocolConstants.MINECRAFT_1_13 )
+                {
+                    writeEitherBaseComponent( prefix, buf, protocolVersion );
+                    writeEitherBaseComponent( suffix, buf, protocolVersion );
+                }
+                buf.writeByte( friendlyFire );
+                if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_21_5 )
+                {
+                    writeVarInt( nameTagVisibility.getRight().ordinal(), buf );
+                    writeVarInt( collisionRule.getRight().ordinal(), buf );
+                } else
+                {
+                    writeString( nameTagVisibility.getLeft(), buf );
+                    if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_9 )
+                    {
+                        writeString( collisionRule.getLeft(), buf );
+                    }
+                }
+
+                if ( protocolVersion >= ProtocolConstants.MINECRAFT_1_13 )
+                {
+                    writeVarInt( color.get(), buf );
+                    writeEitherBaseComponent( prefix, buf, protocolVersion );
+                    writeEitherBaseComponent( suffix, buf, protocolVersion );
+                } else
+                {
+                    buf.writeByte( color.get() );
+                }
             }
         }
         if ( mode == 0 || mode == 3 || mode == 4 )

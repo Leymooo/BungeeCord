@@ -142,6 +142,8 @@ public final class UserConnection implements ProxiedPlayer
     private final Collection<String> permissions = new CaseInsensitiveSet();
     /*========================================================================*/
     @Getter
+    private final UUID sessionId = UUID.randomUUID();
+    @Getter
     @Setter
     private int clientEntityId;
     @Getter

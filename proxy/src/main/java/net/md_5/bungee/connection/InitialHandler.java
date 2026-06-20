@@ -730,7 +730,7 @@ public class InitialHandler extends PacketHandler implements PendingConnection
 
     public void sendLoginSuccess()
     {
-        unsafe.sendPacket( new LoginSuccess( getRewriteId(), getName(), ( loginProfile == null ) ? null : loginProfile.getProperties() ) );
+        unsafe.sendPacket( new LoginSuccess( getRewriteId(), getName(), ( loginProfile == null ) ? null : loginProfile.getProperties(), userCon.getSessionId() ) );
     }
 
     //BotFilter end

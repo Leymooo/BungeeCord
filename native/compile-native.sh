@@ -17,7 +17,7 @@ echo "Compiling mbedtls"
 (cd mbedtls && CFLAGS="-fPIC -I$CWD/src/main/c -DMBEDTLS_USER_CONFIG_FILE='<mbedtls_custom_config.h>'" make no_test)
 
 echo "Compiling zlib"
-(cd zlib && CFLAGS="-fPIC -DNO_GZIP" ./configure --sprefix="bungee_" --static && make)
+(cd zlib && CFLAGS="-fPIC -DNO_GZIP" ./configure --static && make)
 
 CC="gcc"
 CFLAGS="-c -fPIC -O3 -Wall -Werror -I$JAVA_HOME/include/ -I$JAVA_HOME/include/linux/"
@@ -32,7 +32,7 @@ echo "Linking native-cipher.so"
 $CC $LDFLAGS -o src/main/resources/native-cipher.so shared.o NativeCipherImpl.o mbedtls/library/libmbedcrypto.a
 
 echo "Linking native-compress.so"
-$CC $LDFLAGS -o src/main/resources/native-compress.so shared.o NativeCompressImpl.o zlib/libz-ng.a
+$CC $LDFLAGS -o src/main/resources/native-compress.so shared.o NativeCompressImpl.o zlib/libz.a
 
 echo "Cleaning up"
 rm shared.o NativeCipherImpl.o NativeCompressImpl.o
