@@ -102,9 +102,9 @@ public class EmptyChunkPacket extends DefinedPacket
             writeVarInt( 0, buf ); //1.15 - 1.17.1
         } else
         {
-            byte[] sectionData = new byte[] { 0, 0, 0, 0, 0, 0, 1, 0 };
-            byte[] sectionData1215 = new byte[] { 0, 0, 0, 0, 0, 1};
-            byte[] sectionData26_1 = new byte[] { 0, 0, 0, 0, 0, 0, 0, 1 };
+            byte[] sectionData = new byte[] {0, 0, 0, 0, 0, 0, 1, 0};
+            byte[] sectionData1215 = new byte[] {0, 0, 0, 0, 0, 1};
+            byte[] sectionData26_1 = new byte[] {0, 0, 0, 0, 0, 0, 0, 1};
 
             byte[] currentData = version < ProtocolConstants.MINECRAFT_1_21_5 ? sectionData : sectionData1215;
             currentData = version >= ProtocolConstants.MINECRAFT_26_1 ? sectionData26_1 : currentData;
@@ -122,11 +122,18 @@ public class EmptyChunkPacket extends DefinedPacket
 
         if ( version >= ProtocolConstants.MINECRAFT_1_18 ) //light data
         {
-            byte[] lightData = new byte[] { 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, -1, -1, 0, 0 };
+            byte[] lightData = new byte[] {1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 3, -1, -1, 0, 0};
+            byte[] lightData263 = new byte[] {0, 0, 0, 3, -1, -1, 3, 0, 0};
             buf.ensureWritable( lightData.length );
             if ( version >= ProtocolConstants.MINECRAFT_1_20 )
             {
-                buf.writeBytes( lightData, 1, lightData.length - 1 );
+                if ( version >= ProtocolConstants.MINECRAFT_26_3 )
+                {
+                    buf.writeBytes( lightData263 );
+                } else
+                {
+                    buf.writeBytes( lightData, 1, lightData.length - 1 );
+                }
             } else
             {
                 buf.writeBytes( lightData );
@@ -146,7 +153,7 @@ public class EmptyChunkPacket extends DefinedPacket
 
         if ( version < ProtocolConstants.MINECRAFT_1_21_5 )
         {
-            CompoundTag compoundTag = new CompoundTag(new HashMap<>() );
+            CompoundTag compoundTag = new CompoundTag( new HashMap<>() );
             compoundTag.put( "MOTION_BLOCKING", new LongArrayTag( longArrayTag ) );
             Tag write = version >= ProtocolConstants.MINECRAFT_1_20_2 ? compoundTag : new NamedTag( "", compoundTag );
             writeTag( write, buf, version );

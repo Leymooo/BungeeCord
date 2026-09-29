@@ -165,12 +165,12 @@ public class PacketUtils
             ProtocolConstants.MINECRAFT_1_21_4, ProtocolConstants.MINECRAFT_1_21_5,
             ProtocolConstants.MINECRAFT_1_21_6, ProtocolConstants.MINECRAFT_1_21_7,
             ProtocolConstants.MINECRAFT_1_21_9, ProtocolConstants.MINECRAFT_1_21_11,
-            ProtocolConstants.MINECRAFT_26_1, ProtocolConstants.MINECRAFT_26_2 ) )
+            ProtocolConstants.MINECRAFT_26_1, ProtocolConstants.MINECRAFT_26_2, ProtocolConstants.MINECRAFT_26_3 ) )
         {
             configurationRegistry.put( version, new CachedRegistryData( dimension, version ) );
         }
 
-        for ( int version : Arrays.asList( ProtocolConstants.MINECRAFT_26_1, ProtocolConstants.MINECRAFT_26_2 ) )
+        for ( int version : Arrays.asList( ProtocolConstants.MINECRAFT_26_1, ProtocolConstants.MINECRAFT_26_2, ProtocolConstants.MINECRAFT_26_3 ) )
         {
             cachedUpdateTags.put( version, new CachedUpdateTags( version ) );
         }

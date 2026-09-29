@@ -231,6 +231,13 @@ public class Dimension
             root.put( "minecraft:timeline", createTimelineRegistry( protocolVersion ) );
         }
 
+        if ( protocolVersion >= ProtocolConstants.MINECRAFT_26_3 )
+        {
+            root.put( "minecraft:decorated_pot_pattern", createDecoratedPotPatternRegistry( protocolVersion ) );
+            root.put( "minecraft:block_transformer", createBlockTransformerRegistry( protocolVersion ) );
+
+        }
+
         return protocolVersion >= ProtocolConstants.MINECRAFT_1_20_2 ? root : new NamedTag( "", root );
     }
 
@@ -439,21 +446,28 @@ public class Dimension
 
     private CompoundTag createTrimMatrialsRegistry(int version)
     {
-        CompoundTag element = new CompoundTag( new LinkedHashMap<>() );
-        element.put( "asset_name", new StringTag( "amethyst" ) );
-
-        CompoundTag description = new CompoundTag( new LinkedHashMap<>() );
-        description.put( "color", new StringTag( "#9A5CC6" ) );
-        description.put( "translate", new StringTag( "trim_material.minecraft.amethyst" ) );
-        element.put( "description", description );
-
 
         Map<String, CompoundTag> values = new HashMap<>();
-        for (String key : Arrays.asList( "quartz", "iron", "netherite", "redstone", "copper", "gold", "emerald", "diamond", "lapis", "amethyst", "resin" )) {
+        for ( String key : Arrays.asList( "quartz", "iron", "netherite", "redstone", "copper", "gold", "emerald", "diamond", "lapis", "amethyst", "resin" ) )
+        {
+            CompoundTag element = new CompoundTag( new LinkedHashMap<>() );
+
+            if ( version >= ProtocolConstants.MINECRAFT_26_3 )
+            {
+                element.put( "palette_id", new StringTag( "trim/" + key ) );
+            } else
+            {
+                element.put( "asset_name", new StringTag( key ) );
+            }
+
+            CompoundTag description = new CompoundTag( new LinkedHashMap<>() );
+            description.put( "color", new StringTag( "#9A5CC6" ) );
+            description.put( "translate", new StringTag( "trim_material.minecraft." + key ) );
+            element.put( "description", description );
             values.put( key, element );
         }
 
-        return createRegistryTag( "minecraft:trim_material", values);
+        return createRegistryTag( "minecraft:trim_material", values );
     }
 
 
@@ -469,7 +483,8 @@ public class Dimension
         element.put( "description", description );
 
         Map<String, CompoundTag> values = new HashMap<>();
-        for (String key : Arrays.asList("11", "13", "5", "blocks", "cat", "chirp", "far", "mall", "mellohi", "otherside", "pigstep", "relic", "stal", "strad", "wait", "ward", "creator", "creator_music_box", "lava_chicken", "tears", "precipice", "bounce")) {
+        for ( String key : Arrays.asList( "11", "13", "5", "blocks", "cat", "chirp", "far", "mall", "mellohi", "otherside", "pigstep", "relic", "stal", "strad", "wait", "ward", "creator", "creator_music_box", "lava_chicken", "tears", "precipice", "bounce" ) )
+        {
             values.put( key, element );
         }
 
@@ -500,6 +515,48 @@ public class Dimension
         element.put( "description", description );
 
         return createRegistryTag( "minecraft:instrument", Map.of( "minecraft:ponder_goat_horn", element ) );
+    }
+
+    private CompoundTag createDecoratedPotPatternRegistry(int version)
+    {
+
+        Map<String, CompoundTag> values = new HashMap<>();
+        for ( String key : Arrays.asList( "angler", "archer", "arms_up", "blade", "brewer", "burn", "danger",
+            "explorer", "flow", "friend", "guster", "heartbreak", "heart", "howl", "miner", "mourner",
+            "plenty", "prize", "scrape", "sheaf", "shelter", "skull", "snort" ) )
+        {
+            CompoundTag element = new CompoundTag( new LinkedHashMap<>() );
+            element.put( "asset_id", new StringTag( key + "_pottery_pattern" ) );
+
+            values.put( key, element );
+        }
+
+        return createRegistryTag( "minecraft:decorated_pot_pattern", values );
+    }
+
+    private CompoundTag createBlockTransformerRegistry(int version)
+    {
+        Map<String, ListTag> values = new HashMap<>();
+
+
+
+        CompoundTag blockStateProvider = new CompoundTag( new LinkedHashMap<>() );
+
+        blockStateProvider.put( "rules", new ListTag( new ArrayList<>(), Tag.COMPOUND ) );
+        blockStateProvider.put( "type", new StringTag( "minecraft:rule_based" ) );
+
+
+        CompoundTag tag = new CompoundTag( new LinkedHashMap<>() );
+        tag.put( "block_state_provider", blockStateProvider );
+
+        ListTag value = new ListTag(List.of(tag), ListTag.COMPOUND);
+
+        for (String key : Arrays.asList( "axe", "hoe", "shovel" ) ) {
+            values.put( key, value );
+        }
+
+        return createRegistryTag( "minecraft:block_transformer", values );
+
     }
 
 
@@ -589,17 +646,17 @@ public class Dimension
     }
 
 
-    private CompoundTag createRegistryTag(String registryName, Map<String, CompoundTag> elements)
+    private CompoundTag createRegistryTag(String registryName, Map<String, ? extends TypedTag> elements)
     {
         return createRegistryTag( registryName, elements, 0 );
 
     }
 
-    private CompoundTag createRegistryTag(String registryName, Map<String, CompoundTag> elements, int startId)
+    private CompoundTag createRegistryTag(String registryName, Map<String, ? extends TypedTag> elements, int startId)
     {
         int id = startId;
         List<TypedTag> values = new ArrayList<>();
-        for ( Entry<String, CompoundTag> tag : elements.entrySet() )
+        for ( Entry<String, ? extends TypedTag> tag : elements.entrySet() )
         {
             CompoundTag compoundTag = new CompoundTag( new LinkedHashMap<>() );
             compoundTag.put( "id", new IntTag( id++ ) );

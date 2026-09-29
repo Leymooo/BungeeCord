@@ -19,7 +19,7 @@ public class JoinGame extends DefinedPacket
 {
     private final int entityId;
     private boolean hardcore = false;
-    private short gameMode = 0;
+    private short gameMode = 0; //Todo 26.3 varint
     private short previousGameMode = 0;
     private Set<String> worldNames = new HashSet<>( Arrays.asList( "minecraft:overworld" ) );
     private String worldName = "minecraft:overworld";

@@ -17,11 +17,24 @@ public class TeleportConfirm extends DefinedPacket
 {
 
     int teleportId;
-
+    private double x;
+    private double y;
+    private double z;
+    private float yaw;
+    private float pitch;
     @Override
     public void read(ByteBuf buf, ProtocolConstants.Direction direction, int protocolVersion)
     {
         teleportId = DefinedPacket.readVarInt( buf );
+
+        if (protocolVersion >= ProtocolConstants.MINECRAFT_26_3)
+        {
+            this.x = buf.readDouble();
+            this.y = buf.readDouble();
+            this.z = buf.readDouble();
+            this.yaw = buf.readFloat();
+            this.pitch = buf.readFloat();
+        }
     }
 
     @Override

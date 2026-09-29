@@ -91,6 +91,14 @@ public class MoveHandler extends PacketHandler
         if ( confirm.getTeleportId() == waitingTeleportId )
         {
             onTeleportConfirm();
+            if ( version >= ProtocolConstants.MINECRAFT_26_3)
+            {
+                x = confirm.getX();
+                lastY = y;
+                y = confirm.getY();
+                z = confirm.getZ();
+                onMove();
+            }
         }
     }
 
@@ -100,7 +108,7 @@ public class MoveHandler extends PacketHandler
         y = -1;
         lastY = -1;
         waitingTeleportId = -1;
-        if ( version >= ProtocolConstants.MINECRAFT_1_21_2 && lastCapturedPacket != null )
+        if ( version == ProtocolConstants.MINECRAFT_1_21_2 && lastCapturedPacket != null ) //TODO: Test
         {
             handle( lastCapturedPacket );
         }

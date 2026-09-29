@@ -93,7 +93,7 @@ public class SetSlot extends DefinedPacket
                 buf.writeByte( 0 ); //No Nbt
             } else if ( version < ProtocolConstants.MINECRAFT_1_20_5 )
             {
-                CompoundTag nbt = new CompoundTag(new LinkedHashMap<>() );
+                CompoundTag nbt = new CompoundTag( new LinkedHashMap<>() );
                 nbt.put( "map", new IntTag( 0 ) );
 
                 Tag write = version >= ProtocolConstants.MINECRAFT_1_20_2 ? nbt : new NamedTag( "", nbt );
@@ -109,15 +109,22 @@ public class SetSlot extends DefinedPacket
                     if ( version < ProtocolConstants.MINECRAFT_1_21_2 )
                     {
                         DefinedPacket.writeVarInt( 26, buf ); //map data component
-                    } else if (version < ProtocolConstants.MINECRAFT_1_21_5 )
+                    } else if ( version < ProtocolConstants.MINECRAFT_1_21_5 )
                     {
                         DefinedPacket.writeVarInt( 36, buf ); //map data component
-                    } else if (version < ProtocolConstants.MINECRAFT_1_21_11 ) {
+                    } else if ( version < ProtocolConstants.MINECRAFT_1_21_11 )
+                    {
                         DefinedPacket.writeVarInt( 37, buf ); //map data component
-                    } else if (version < ProtocolConstants.MINECRAFT_26_1){
+                    } else if ( version < ProtocolConstants.MINECRAFT_26_1 )
+                    {
                         DefinedPacket.writeVarInt( 44, buf ); //map data component
-                    } else {
+                    } else if ( version < ProtocolConstants.MINECRAFT_26_3 )
+                    {
                         DefinedPacket.writeVarInt( 46, buf ); //map data component
+
+                    } else
+                    {
+                        DefinedPacket.writeVarInt( 48, buf ); //map data component
 
                     }
                     DefinedPacket.writeVarInt( 0, buf ); //component value
@@ -182,8 +189,12 @@ public class SetSlot extends DefinedPacket
         } else if ( version <= ProtocolConstants.MINECRAFT_1_21_11 )
         {
             return 1104;
-        } else {
+        } else if ( version <= ProtocolConstants.MINECRAFT_26_2 )
+        {
             return 1105;
+        } else
+        {
+            return 1238;
         }
 
     }
